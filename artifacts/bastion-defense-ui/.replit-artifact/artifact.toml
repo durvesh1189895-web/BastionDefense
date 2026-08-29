@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "Bastion Defense UI"
+description = "A polished, interactive landscape game UI shell for Bastion Defense, covering the main menu, campaign selection, store, sound, settings, and future-feature placeholders while keeping game integration points open for the existing gameplay systems."
+version = "1.0.0"
+id = "artifacts/bastion-defense-ui"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 20594
+
+[services.development]
+run = "pnpm --filter @workspace/bastion-defense-ui run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/bastion-defense-ui", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/bastion-defense-ui/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "20594"
+BASE_PATH = "/"

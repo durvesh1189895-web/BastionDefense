@@ -1,0 +1,232 @@
+Create a polished, AAA-quality game UI/UX shell for a landscape-first tower-defense game called “Bastion Defense.”
+
+IMPORTANT:
+- This is a UI/UX design and interaction task only.
+- Do not build gameplay, enemy logic, tower mechanics, backend systems, authentication, databases, or real payment processing.
+- Use local mock data for all screens and interactions.
+- I will attach:
+  1. A store/tower-upgrade screenshot as the primary visual reference.
+  2. A main menu background image.
+  3. The game logo.
+- Use the attached store screenshot as the strongest design reference. Do not copy it pixel-for-pixel, but match its professional visual language and make the entire game feel like it was created by the same experienced game studio.
+
+VISUAL DIRECTION:
+Build a serious, premium tactical/military defense-game interface. The current UI must not feel playful, childish, generic, rounded, or like a web dashboard.
+
+The visual language should be inspired by the attached store screenshot:
+- Dark cinematic charcoal, black, graphite, and desaturated gray backgrounds.
+- High-contrast white condensed uppercase typography.
+- Bright yellow/lime accent color for selected states, upgrades, values, progress, and important actions.
+- Thin metallic-gray dividers and borders.
+- Angular, squared, beveled, or chamfered panels instead of soft rounded cards.
+- Strong visual hierarchy with large weapon/tower names.
+- Technical military HUD details, restrained grid lines, subtle noise, faint machinery silhouettes, and tactical markings.
+- Use color sparingly and intentionally.
+- Avoid excessive gradients, oversized decorative effects, cartoon styling, bubble buttons, glassmorphism, pastel colors, and unnecessary rounded UI.
+- The attached store screenshot should feel like the same product, same studio, and same design system across every screen.
+
+ASSET USAGE:
+- Use the attached main menu background image as the actual main menu background.
+- Use the attached logo as the actual game logo.
+- Do not replace provided assets with generated gradients or unrelated placeholders.
+- Add a clean asset-slot structure so additional background, tower, weapon, icon, and offer art can be added later without changing the layout.
+- If a specific optional image is missing, use a restrained dark tactical placeholder that still matches the reference style.
+- Preserve image aspect ratios and provide a dark overlay where necessary to maintain text readability.
+
+CORE SCREENS:
+
+1. MAIN MENU
+Create a premium cinematic main menu using the provided background image and logo.
+
+Include:
+- Prominent game logo positioned with strong composition.
+- Primary “PLAY” or “PLAY NOW” action.
+- Secondary navigation for:
+  - Store
+  - Audio
+  - Settings
+  - Ranks
+  - Events
+  - Allies
+- Player profile area with commander name, level, and avatar/emblem.
+- Gold and diamond resource balances.
+- A small daily reward or first-win indicator.
+- Subtle ambient background motion, particles, light movement, or parallax only if it remains smooth and does not distract.
+- The main menu should immediately feel like a real shipped game, not a prototype.
+
+2. CAMPAIGN / WORLD SELECT
+Create a horizontal, snap-based campaign carousel.
+
+Each campaign card should support:
+- World number and title.
+- Background image or tactical environment art.
+- Short description.
+- Progress percentage.
+- Current stage, such as “05 / 12.”
+- Locked and unlocked states.
+- Clear “PLAY” or “ENTER” action on the active card.
+- Locked cards must communicate exactly what is required to unlock them.
+- Left/right navigation arrows.
+- Pagination indicators.
+- Mouse, keyboard, touch, and swipe support.
+- The active card must be visually dominant while neighboring cards remain partially visible.
+- Use smooth snapping and transition animations without jitter.
+
+3. STORE
+Create a store screen matching the attached store screenshot as closely as possible in interaction quality and visual language.
+
+Use exactly four categories:
+- Defenses
+- Gold
+- Diamonds
+- Special Offers
+
+Store navigation must be immediate and responsive. Switching tabs should not reload the app or cause visual jumps.
+
+3A. DEFENSE DETAIL / UPGRADE VIEW
+Build a weapon/tower detail screen based on the attached Twin Cannon reference.
+
+Include:
+- Large tower or weapon artwork in the center-left.
+- Tower name, rarity, level, and description.
+- Resource cost near the relevant purchase or upgrade action.
+- Right-side “WEAPON STATS” or “TOWER STATS” panel.
+- Stats such as:
+  - Damage
+  - Range
+  - Fire Rate
+  - Upgrading Cost
+- Numeric values aligned clearly on the right.
+- Bright yellow/lime horizontal stat bars.
+- Tower/weapon selection rail at the bottom.
+- Previous and next navigation controls.
+- Selected tower highlighted with a precise bright border or glow.
+- Primary “UPGRADE” button with a clear cost.
+- Upgrade feedback through a polished confirmation state or lightweight toast.
+- Make the layout feel like a console/PC game equipment screen, not an ecommerce website.
+
+3B. GOLD AND DIAMONDS
+Create premium currency package screens with:
+- Four package options per currency.
+- Strong package hierarchy.
+- Amount, bonus amount, and price.
+- Featured “BEST VALUE” package.
+- Clear purchase buttons.
+- Mock purchase interaction only.
+- After selecting a package, show a refined confirmation or status message.
+- Never imply that real payments are connected.
+
+3C. SPECIAL OFFERS
+Create exactly four promotional offer cards.
+
+Each offer should include:
+- Offer title.
+- Short description.
+- Reward contents.
+- Price.
+- Badge such as LIMITED, NEW, BEST VALUE, or HOT.
+- Strong visual identity while remaining part of the same dark tactical system.
+- Clear action button.
+- Mock selection feedback only.
+
+4. AUDIO SCREEN
+Include:
+- SFX volume slider from 0 to 100.
+- Current percentage value.
+- Clear “SOUND OFF” state at 0.
+- “SOUND ON” state above 0.
+- Test sound button using mock feedback only.
+- Smooth slider interaction and visible value updates.
+
+5. SETTINGS SCREEN
+Include:
+- Audio, opening the audio screen.
+- Controls toggle.
+- Language row marked as ready for localization.
+- Help & Support row.
+- Save settings action with mock local confirmation.
+- Use proper toggle states, hover states, pressed states, and focus states.
+
+6. FUTURE FEATURE SCREENS
+Create polished placeholder boundaries for:
+- Commander Ranks
+- Events / Tactical Intel
+- Allies / Ally Network
+
+These should feel intentional and production-ready, with:
+- Clear title.
+- Short explanation.
+- “Coming soon” or “Feature boundary ready” messaging.
+- Return-to-menu action.
+- Do not leave empty blank screens.
+
+AAA SMOOTHNESS REQUIREMENTS:
+The most important requirement is the feel of the interface.
+
+Implement:
+- Smooth screen transitions using opacity and transform only.
+- Smooth 200–350ms transitions for navigation, selection, hover, and focus.
+- Spring-like or cubic-bezier easing where appropriate.
+- No abrupt layout jumps.
+- No flashing content during screen changes.
+- No visible loading gaps for local mock data.
+- No animation that causes text or panels to reflow unnecessarily.
+- Respect prefers-reduced-motion.
+- Keep animations GPU-friendly by prioritizing transform and opacity.
+- Avoid expensive continuous JavaScript animation loops.
+- Ensure carousel dragging and snapping feel controlled and responsive.
+- Buttons must have clear hover, pressed, disabled, selected, and focus-visible states.
+- Every interaction should provide immediate visual feedback.
+- The interface should feel responsive at 60fps on desktop and mobile/tablet landscape layouts.
+
+RESPONSIVE UX:
+- Design primarily for 16:9 landscape game screens.
+- Support desktop, tablet landscape, and smaller landscape screens.
+- Maintain the hierarchy of the store screenshot at different resolutions.
+- Avoid vertical scrolling on core game screens whenever possible.
+- Adapt side panels and navigation intelligently on smaller screens.
+- Keep touch targets large enough for touch interaction.
+- Support mouse, touch, and keyboard navigation.
+- Add accessible labels to icon-only controls.
+- Maintain strong contrast between text, controls, and backgrounds.
+
+IMPLEMENTATION GUIDELINES:
+- Use React and TypeScript.
+- Keep screen state and mock presentation data separate from visual components.
+- Build reusable components for:
+  - Top resource bar
+  - Screen header
+  - Tactical panels
+  - Stat rows
+  - Progress bars
+  - Tower/weapon cards
+  - Store tabs
+  - Upgrade buttons
+  - Toast/status feedback
+  - Carousel controls
+- Keep provided assets replaceable through named asset slots.
+- Use local mock data only.
+- Expose optional integration callbacks for future gameplay, purchases, campaign launch, upgrades, and audio volume without implementing those systems now.
+- Keep the UI shell independent from gameplay logic.
+- Do not add unnecessary dependencies.
+- Do not create a backend for this task.
+
+QUALITY BAR:
+Before finishing, manually verify every screen and interaction:
+- Main menu navigation works.
+- Play opens campaign selection.
+- Campaign carousel works through arrows, dots, clicking, dragging, and swiping.
+- Locked campaigns cannot be launched.
+- Unlocked campaigns trigger mock launch feedback.
+- Store tabs switch correctly.
+- Defense selection updates the weapon name, rarity, description, artwork, and all stats.
+- Upgrade action gives feedback.
+- Currency package actions give feedback.
+- Special offer actions give feedback.
+- Audio slider updates correctly.
+- Settings toggles behave correctly.
+- Back and logo buttons return to the main menu.
+- No console errors.
+- No broken images.
+- No placeholder copy that looks unfinished.
+- The final result must look like a cohesive AAA game UI system created by one professional studio.
