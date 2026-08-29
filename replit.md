@@ -4,12 +4,15 @@ A polished, landscape-first Bastion Defense game UI shell with local sample data
 
 ## Run & Operate
 
-- `pnpm --filter @workspace/api-server run dev` — run the API server (port 5000)
+- `pnpm --filter @workspace/bastion-defense-ui run dev` — run the frontend UI; the artifact workflow supplies `PORT` and `BASE_PATH`
+- `pnpm --filter @workspace/api-server run dev` — run the optional API server (port 8080)
 - `pnpm run typecheck` — full typecheck across all packages
+- `PORT=5000 BASE_PATH=/ pnpm --filter @workspace/bastion-defense-ui run build` — build the frontend locally
 - `pnpm run build` — typecheck + build all packages
 - `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from the OpenAPI spec
-- `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
-- Required env: `DATABASE_URL` — Postgres connection string
+- `pnpm --filter @workspace/db run push` — push DB schema changes only when database work is intentional
+
+The frontend is self-contained and uses local mock data; it does not require `DATABASE_URL`, API access, or secrets to run. `DATABASE_URL` is needed only for the optional database package and schema commands.
 
 ## Stack
 
@@ -46,7 +49,8 @@ _Populate as you build — explicit user instructions worth remembering across s
 
 ## Gotchas
 
-_Populate as you build — sharp edges, "always run X before Y" rules._
+- Keep the `artifacts/bastion-defense-ui: web` workflow as the single frontend preview process; do not add another workflow on the same port.
+- The frontend Vite config intentionally requires `PORT` and `BASE_PATH` when run directly. Use the artifact workflow or provide both variables in a shell command.
 
 ## Pointers
 
