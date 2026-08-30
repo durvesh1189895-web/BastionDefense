@@ -150,7 +150,10 @@ function MainMenu({ go, show }: { go: (screen: Screen) => void; show: (message: 
 function CampaignSelect({ go, show }: { go: (screen: Screen) => void; show: (message: string) => void }) {
   const [active, setActive] = useState(1);
   const [viewportWidth, setViewportWidth] = useState(typeof window === 'undefined' ? 900 : window.innerWidth);
-  const pointerStart = useRef<number | null>(null);
+  const [dragX, setDragX] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+  const pointerStart = useRef<{ x: number; time: number; id: number } | null>(null);
+  const suppressClick = useRef(false);
   useEffect(() => {
     const resize = () => setViewportWidth(window.innerWidth);
     window.addEventListener('resize', resize);
@@ -159,7 +162,38 @@ function CampaignSelect({ go, show }: { go: (screen: Screen) => void; show: (mes
   const cardWidth = Math.min(viewportWidth * .66, 690);
   const gap = Math.max(12, viewportWidth * .02);
   const transform = viewportWidth / 2 - cardWidth / 2 - active * (cardWidth + gap);
-  const shift = (direction: number) => setActive(current => Math.max(0, Math.min(campaigns.length - 1, current + direction)));
+  const shift = (direction: 1 | -1) => setActive(current => Math.max(0, Math.min(campaigns.length - 1, current + direction)));
+  const handlePointerDown = (event: ReactPointerEvent<HTMLDivElement>) => {
+    if (event.button !== 0) return;
+    event.currentTarget.setPointerCapture(event.pointerId);
+    pointerStart.current = { x: event.clientX, time: performance.now(), id: event.pointerId };
+    setIsDragging(true);
+  };
+  const handlePointerMove = (event: ReactPointerEvent<HTMLDivElement>) => {
+    const start = pointerStart.current;
+    if (!start || start.id !== event.pointerId) return;
+    const distance = event.clientX - start.x;
+    const limit = cardWidth * .36;
+    const resistance = Math.abs(distance) > limit ? limit + (Math.abs(distance) - limit) * .18 : Math.abs(distance);
+    setDragX(Math.sign(distance) * resistance);
+  };
+  const handlePointerUp = (event: ReactPointerEvent<HTMLDivElement>, cancelled = false) => {
+    const start = pointerStart.current;
+    if (!start || start.id !== event.pointerId) return;
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
+    pointerStart.current = null;
+    setIsDragging(false);
+    if (cancelled) {
+      setDragX(0);
+      return;
+    }
+    const distance = event.clientX - start.x;
+    const velocity = distance / Math.max(1, performance.now() - start.time);
+    const shouldAdvance = Math.abs(distance) > 42 || Math.abs(velocity) > .35;
+    suppressClick.current = shouldAdvance;
+    setDragX(0);
+    if (shouldAdvance) shift(distance < 0 ? 1 : -1);
+  };
   const selected = campaigns[active];
   return (
     <div className="screen">
@@ -175,9 +209,10 @@ function CampaignSelect({ go, show }: { go: (screen: Screen) => void; show: (mes
             role="listbox"
             tabIndex={0}
             aria-label="Campaign worlds"
-            onPointerDown={(event: ReactPointerEvent<HTMLDivElement>) => { pointerStart.current = event.clientX; }}
-            onPointerUp={(event: ReactPointerEvent<HTMLDivElement>) => { if (pointerStart.current === null) return; const distance = event.clientX - pointerStart.current; if (Math.abs(distance) > 36) shift(distance < 0 ? 1 : -1); pointerStart.current = null; }}
-            onPointerCancel={() => { pointerStart.current = null; }}
+             onPointerDown={handlePointerDown}
+             onPointerMove={handlePointerMove}
+             onPointerUp={handlePointerUp}
+             onPointerCancel={(event) => handlePointerUp(event, true)}
             onKeyDown={(event) => {
               if (event.key === 'ArrowLeft') { event.preventDefault(); shift(-1); }
               if (event.key === 'ArrowRight') { event.preventDefault(); shift(1); }
@@ -185,9 +220,9 @@ function CampaignSelect({ go, show }: { go: (screen: Screen) => void; show: (mes
               if (event.key === 'End') { event.preventDefault(); setActive(campaigns.length - 1); }
             }}
             data-testid="carousel-campaigns">
-            <div className="carousel-track" style={{ transform: `translateX(${transform}px)` }}>
+             <div className={`carousel-track ${isDragging ? 'is-dragging' : ''}`} style={{ transform: `translate3d(${transform + dragX}px, 0, 0)` }}>
               {campaigns.map((campaign, index) => (
-                <article key={campaign.id} className={`campaign-card ${index === active ? 'active' : ''}`} role="option" aria-selected={index === active} onClick={() => setActive(index)} data-testid={`card-campaign-${campaign.id}`}>
+                 <article key={campaign.id} className={`campaign-card ${index === active ? 'active' : ''}`} role="option" aria-selected={index === active} onClick={() => { if (suppressClick.current) { suppressClick.current = false; return; } if (index !== active) shift(index > active ? 1 : -1); }} data-testid={`card-campaign-${campaign.id}`}>
                   <div className="campaign-art" data-asset-slot={assetSlots.campaignBackgrounds[index]}>
                     <AssetLayer slot={assetSlots.campaignBackgrounds[index]} />
                   </div>
@@ -205,7 +240,7 @@ function CampaignSelect({ go, show }: { go: (screen: Screen) => void; show: (mes
             </div>
           </div>
           <button className="carousel-arrow right" onClick={() => shift(1)} aria-label="Next campaign" data-testid="button-next-campaign"><ChevronRight size={28} /></button>
-          <div className="dots">{campaigns.map((campaign, index) => <button key={campaign.id} className={`dot ${index === active ? 'active' : ''}`} onClick={() => setActive(index)} aria-label={`Select campaign ${index + 1}`} data-testid={`button-dot-${campaign.number}`} />)}</div>
+           <div className="dots">{campaigns.map((campaign, index) => <button key={campaign.id} className={`dot ${index === active ? 'active' : ''}`} onClick={() => { if (index !== active) shift(index > active ? 1 : -1); }} aria-label={`Select campaign ${index + 1}`} data-testid={`button-dot-${campaign.number}`} />)}</div>
         </div>
       </div>
     </div>
@@ -214,6 +249,9 @@ function CampaignSelect({ go, show }: { go: (screen: Screen) => void; show: (mes
 
 function Store({ go, show }: { go: (screen: Screen) => void; show: (message: string) => void }) {
   const [tab, setTab] = useState<StoreTab>('defenses');
+  const changeTab = (nextTab: StoreTab) => {
+    if (nextTab !== tab) setTab(nextTab);
+  };
   return (
     <div className="screen">
       <TopBar onHome={() => go('home')} />
@@ -225,9 +263,9 @@ function Store({ go, show }: { go: (screen: Screen) => void; show: (message: str
        <div className="store-layout">
          <div className="store-intro"><span>Make your defenses stronger</span><small>Choose a boost for your next run.</small></div>
           <nav className="store-tabs" aria-label="Store categories">
-            {([['defenses', 'Defenses', <Shield size={16} />], ['gold', 'Gold', <Coins size={16} />], ['diamonds', 'Diamonds', <Gem size={16} />], ['offers', 'Special Offers', <Gift size={16} />] ] as [StoreTab, string, ReactNode][]).map(([id, label, icon]) => <button key={id} className={`store-tab ${tab === id ? 'active' : ''}`} onClick={() => setTab(id)} data-testid={`tab-store-${id}`}>{icon} {label}</button>)}
+             {([['defenses', 'Defenses', <Shield size={16} />], ['gold', 'Gold', <Coins size={16} />], ['diamonds', 'Diamonds', <Gem size={16} />], ['offers', 'Special Offers', <Gift size={16} />] ] as [StoreTab, string, ReactNode][]).map(([id, label, icon]) => <button key={id} className={`store-tab ${tab === id ? 'active' : ''}`} onClick={() => changeTab(id)} aria-selected={tab === id} role="tab" data-testid={`tab-store-${id}`}>{icon} {label}</button>)}
           </nav>
-          <div className="store-content">
+           <div className="store-content" key={tab} role="tabpanel" aria-label={`${tab} store`}>
             {tab === 'defenses' && <DefenseStore show={show} />}
             {(tab === 'gold' || tab === 'diamonds') && <CurrencyStore type={tab} show={show} />}
             {tab === 'offers' && <Offers show={show} />}
@@ -240,27 +278,93 @@ function Store({ go, show }: { go: (screen: Screen) => void; show: (message: str
 
 function DefenseStore({ show }: { show: (message: string) => void }) {
   const [active, setActive] = useState(0);
+  const [dragX, setDragX] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+  const [isSwitching, setIsSwitching] = useState(false);
+  const [swipeDirection, setSwipeDirection] = useState<1 | -1>(1);
+  const pointerStart = useRef<{ x: number; time: number; id: number } | null>(null);
+  const transitionTimer = useRef<number | null>(null);
   const defense = defenses[active];
-  const shift = (direction: number) => setActive(current => (current + direction + defenses.length) % defenses.length);
+  useEffect(() => () => {
+    if (transitionTimer.current !== null) window.clearTimeout(transitionTimer.current);
+  }, []);
+  const selectDefense = (nextIndex: number, direction: 1 | -1) => {
+    if (nextIndex === active || isSwitching) return;
+    setSwipeDirection(direction);
+    setIsSwitching(true);
+    setDragX(direction > 0 ? -150 : 150);
+    transitionTimer.current = window.setTimeout(() => {
+      setActive(nextIndex);
+      setDragX(0);
+      setIsSwitching(false);
+      transitionTimer.current = null;
+    }, 240);
+  };
+  const shift = (direction: 1 | -1) => selectDefense((active + direction + defenses.length) % defenses.length, direction);
+  const handlePointerDown = (event: ReactPointerEvent<HTMLDivElement>) => {
+    if (event.button !== 0 || isSwitching) return;
+    event.currentTarget.setPointerCapture(event.pointerId);
+    pointerStart.current = { x: event.clientX, time: performance.now(), id: event.pointerId };
+    setIsDragging(true);
+  };
+  const handlePointerMove = (event: ReactPointerEvent<HTMLDivElement>) => {
+    const start = pointerStart.current;
+    if (!start || start.id !== event.pointerId || isSwitching) return;
+    const distance = event.clientX - start.x;
+    const resistance = Math.abs(distance) > 150 ? 150 + (Math.abs(distance) - 150) * .18 : Math.abs(distance);
+    setDragX(Math.sign(distance) * resistance);
+  };
+  const finishPointer = (event: ReactPointerEvent<HTMLDivElement>, cancelled = false) => {
+    const start = pointerStart.current;
+    if (!start || start.id !== event.pointerId) return;
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
+    pointerStart.current = null;
+    setIsDragging(false);
+    if (cancelled) {
+      setDragX(0);
+      return;
+    }
+    const distance = event.clientX - start.x;
+    const elapsed = Math.max(1, performance.now() - start.time);
+    const velocity = distance / elapsed;
+    const shouldAdvance = Math.abs(distance) > 48 || Math.abs(velocity) > .35;
+    if (!shouldAdvance) {
+      setDragX(0);
+      return;
+    }
+    const direction: 1 | -1 = distance < 0 ? 1 : -1;
+    selectDefense((active + direction + defenses.length) % defenses.length, direction);
+  };
+  const handlePointerUp = (event: ReactPointerEvent<HTMLDivElement>) => finishPointer(event);
   const statIcons = [<Zap size={16} />, <Target size={16} />, <Crosshair size={16} />, <Coins size={16} />];
   const statNames = ['DAMAGE', 'RANGE', 'FIRE RATE', 'UPGRADING COST'];
   const values = [defense.damage, defense.range, defense.fireRate, defense.cost];
   return (
     <div className="defense-layout">
       <section className="defense-showcase">
-        <div className="defense-hero">
-          <div className="defense-title"><div className="rarity">{defense.rarity} · LEVEL 04</div><h2 className="display">{defense.name}</h2><p>{defense.description}</p><span className="defense-hint">Ready for an upgrade?</span></div>
-          <div className="tower-orb" aria-label={`${defense.name} asset placeholder`} data-asset-slot={assetSlots.defenseArt[active]} data-testid="asset-defense-artwork">
-            <AssetLayer slot={assetSlots.defenseArt[active]} alt={`${defense.name} artwork`} />
-          </div>
+         <div
+           className={`defense-hero ${isDragging ? 'is-dragging' : ''} ${isSwitching ? 'is-switching' : ''}`}
+           style={{ '--drag-x': `${dragX}px`, '--drag-rotate': `${dragX / 32}deg` } as CSSProperties}
+           onPointerDown={handlePointerDown}
+           onPointerMove={handlePointerMove}
+           onPointerUp={handlePointerUp}
+           onPointerCancel={(event) => finishPointer(event, true)}
+           data-testid="defense-swipe-surface"
+         >
+           <div key={defense.id} className={`defense-hero-content ${swipeDirection > 0 ? 'enter-from-right' : 'enter-from-left'}`}>
+             <div className="defense-title"><div className="rarity">{defense.rarity} · LEVEL 04</div><h2 className="display">{defense.name}</h2><p>{defense.description}</p><span className="defense-hint">Swipe to cycle arsenal</span></div>
+             <div className="tower-orb" aria-label={`${defense.name} asset placeholder`} data-asset-slot={assetSlots.defenseArt[active]} data-testid="asset-defense-artwork">
+               <AssetLayer slot={assetSlots.defenseArt[active]} alt={`${defense.name} artwork`} />
+             </div>
+           </div>
         </div>
         <div className="defense-rail">
-          <button className="rail-arrow" onClick={() => shift(-1)} aria-label="Previous defense" data-testid="button-previous-defense"><ChevronLeft size={22} /></button>
-          {defenses.map((item, index) => <button className={`defense-thumb ${index === active ? 'active' : ''}`} key={item.id} onClick={() => setActive(index)} data-testid={`button-defense-${item.id}`}><span className="mini-tower" /><span>{item.name}</span></button>)}
-          <button className="rail-arrow" onClick={() => shift(1)} aria-label="Next defense" data-testid="button-next-defense"><ChevronRight size={22} /></button>
+           <button className="rail-arrow" onClick={() => shift(-1)} aria-label="Previous defense" data-testid="button-previous-defense"><ChevronLeft size={22} /></button>
+           {defenses.map((item, index) => <button className={`defense-thumb ${index === active ? 'active' : ''}`} key={item.id} onClick={() => selectDefense(index, index > active ? 1 : -1)} data-testid={`button-defense-${item.id}`}><span className="mini-tower" /><span>{item.name}</span></button>)}
+           <button className="rail-arrow" onClick={() => shift(1)} aria-label="Next defense" data-testid="button-next-defense"><ChevronRight size={22} /></button>
         </div>
       </section>
-      <aside className="stats-panel">
+       <aside className="stats-panel" key={defense.id}>
          <h3 className="display">Make it stronger</h3>
         {statNames.map((name, index) => <div className="stat" key={name}><div className="stat-head"><span>{statIcons[index]} {name}</span><b>{values[index]}</b></div><div className="stat-bar"><i style={{ width: `${defense.bars[index]}%` }} /></div></div>)}
         <button className="game-button secondary upgrade-button" onClick={() => { bastionUiAdapter.onUpgradeDefense?.(defense.id); show(`${defense.name} upgrade requested`); }} data-testid="button-upgrade-defense"><Hammer size={18} /> Upgrade <Coins size={16} /> {defense.cost}</button>

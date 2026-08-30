@@ -1385,6 +1385,177 @@ input:focus-visible {
   outline-offset: 3px;
 }
 
+/* Store motion pass: movement should feel authored, not like a page repaint. */
+.store-tabs {
+  isolation: isolate;
+}
+
+.store-tab {
+  position: relative;
+  transition: color .24s ease, background .24s ease, border-color .24s ease, transform .24s cubic-bezier(.2,.8,.2,1);
+}
+
+.store-tab::after {
+  content: '';
+  position: absolute;
+  right: 12%;
+  bottom: -1px;
+  left: 12%;
+  height: 2px;
+  background: var(--gold);
+  transform: scaleX(0);
+  transform-origin: center;
+  transition: transform .32s cubic-bezier(.16,1,.3,1);
+}
+
+.store-tab.active::after {
+  transform: scaleX(1);
+}
+
+.store-tab:active {
+  transform: translateY(2px);
+}
+
+.store-content {
+  animation: store-content-in .46s cubic-bezier(.16,1,.3,1) both;
+  transform-origin: 50% 0;
+}
+
+.carousel-track {
+  cursor: grab;
+  will-change: transform;
+  transition: transform .52s cubic-bezier(.16, 1, .3, 1);
+}
+
+.carousel-track.is-dragging {
+  cursor: grabbing;
+  transition: none;
+}
+
+@keyframes store-content-in {
+  from { opacity: 0; transform: translate3d(0, 16px, 0) scale(.985); filter: blur(3px); }
+  to { opacity: 1; transform: translate3d(0, 0, 0) scale(1); filter: blur(0); }
+}
+
+.defense-hero {
+  cursor: grab;
+  touch-action: pan-y;
+  user-select: none;
+  will-change: transform;
+  transform: translate3d(var(--drag-x, 0px), 0, 0) rotate(var(--drag-rotate, 0deg));
+  transition: transform .52s cubic-bezier(.16, 1, .3, 1), box-shadow .32s ease, border-color .24s ease;
+}
+
+.defense-hero.is-dragging {
+  cursor: grabbing;
+  transition: none;
+  box-shadow: 0 21px 42px rgba(0,0,0,.4);
+}
+
+.defense-hero.is-switching {
+  transition: transform .24s cubic-bezier(.55, .06, .68, .19);
+}
+
+.defense-hero-content {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: defense-enter-right .5s cubic-bezier(.16,1,.3,1) both;
+  will-change: transform, opacity;
+}
+
+.defense-hero-content.enter-from-left {
+  animation-name: defense-enter-left;
+}
+
+@keyframes defense-enter-right {
+  from { opacity: 0; transform: translate3d(70px, 0, 0) scale(.94); }
+  to { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
+}
+
+@keyframes defense-enter-left {
+  from { opacity: 0; transform: translate3d(-70px, 0, 0) scale(.94); }
+  to { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
+}
+
+.defense-hero.is-dragging .tower-orb {
+  transform: scale(.97);
+}
+
+.tower-orb {
+  transition: transform .4s cubic-bezier(.16,1,.3,1), filter .4s ease;
+}
+
+.defense-hero:not(.is-dragging):hover .tower-orb {
+  transform: scale(1.035) rotate(-2deg);
+  filter: brightness(1.08);
+}
+
+.defense-thumb,
+.rail-arrow,
+.package-card,
+.offer-card,
+.stat-bar i {
+  transition: transform .32s cubic-bezier(.16,1,.3,1), border-color .24s ease, background .24s ease, box-shadow .32s ease, filter .24s ease;
+}
+
+.defense-thumb:hover {
+  transform: translateY(-3px);
+  border-color: var(--line-strong);
+}
+
+.defense-thumb.active .mini-tower {
+  animation: thumb-lock-on .42s cubic-bezier(.16,1,.3,1) both;
+}
+
+@keyframes thumb-lock-on {
+  from { transform: scale(.72); opacity: .45; }
+  70% { transform: scale(1.1); }
+  to { transform: scale(1); opacity: 1; }
+}
+
+.stat-bar i {
+  transform-origin: left center;
+  animation: stat-fill-in .6s cubic-bezier(.16,1,.3,1) both;
+}
+
+@keyframes stat-fill-in {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+
+.package-card,
+.offer-card {
+  animation: store-card-in .5s cubic-bezier(.16,1,.3,1) both;
+}
+
+.package-card:nth-child(2),
+.offer-card:nth-child(2) { animation-delay: 45ms; }
+.package-card:nth-child(3),
+.offer-card:nth-child(3) { animation-delay: 90ms; }
+.package-card:nth-child(4),
+.offer-card:nth-child(4) { animation-delay: 135ms; }
+
+@keyframes store-card-in {
+  from { opacity: 0; transform: translate3d(0, 24px, 0) scale(.96); }
+  to { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
+}
+
+.package-card:hover,
+.offer-card:hover {
+  transform: translate3d(0, -5px, 0);
+  border-color: var(--line-strong);
+  box-shadow: 0 9px 24px rgba(0,0,0,.25);
+}
+
+.game-button,
+.buy-button {
+  will-change: transform;
+}
+
 @media (max-width: 700px) {
   .resource {
     min-width: 62px;
