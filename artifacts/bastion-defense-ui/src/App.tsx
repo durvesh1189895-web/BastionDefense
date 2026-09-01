@@ -27,8 +27,9 @@ export const assetSlots = {
   specialOffers: ['special_offer_01.png', 'special_offer_02.png', 'special_offer_03.png', 'special_offer_04.png'],
 } as const;
 
-type Screen = 'home' | 'campaign' | 'store' | 'sound' | 'settings' | 'stub1' | 'stub2' | 'stub3';
+type Screen = 'home' | 'campaign' | 'game' | 'store' | 'sound' | 'settings' | 'stub1' | 'stub2' | 'stub3';
 type StoreTab = 'defenses' | 'gold' | 'diamonds' | 'offers';
+type GameStage = 'meadow' | 'town-square';
 
 function AssetLayer({ slot, className = '', alt = '' }: { slot: string; className?: string; alt?: string }) {
   const [visible, setVisible] = useState(true);
@@ -44,8 +45,8 @@ function AssetLayer({ slot, className = '', alt = '' }: { slot: string; classNam
 }
 
 const campaigns = [
-  { id: 'iron-pass', number: '01', name: 'IRON PASS', description: 'A sunny mountain trail with one very brave gate to protect.', progress: 100, stage: '12 / 12', unlocked: true },
-  { id: 'ember-coast', number: '02', name: 'EMBER COAST', description: 'The tide is rising. Rally your towers before the shore comes alive.', progress: 42, stage: '05 / 12', unlocked: true },
+  { id: 'meadow', number: '01', name: 'MEADOW', description: 'Hold the open frontier and defend the first line of the kingdom.', progress: 100, stage: 'LEVEL 01 READY', unlocked: true, gameStage: 'meadow' as GameStage },
+  { id: 'town-square', number: '02', name: 'TOWN SQUARE', description: 'A tighter urban defense. Every lane around the plaza matters.', progress: 42, stage: 'LEVEL 01 READY', unlocked: true, gameStage: 'town-square' as GameStage },
   { id: 'glass-marsh', number: '03', name: 'GLASS MARSH', description: 'A misty maze full of surprises. Finish the coast to unlock it.', progress: 0, stage: 'LOCKED', unlocked: false },
   { id: 'northwatch', number: '04', name: 'NORTHWATCH', description: 'A snowy frontier waiting for its next great defender.', progress: 0, stage: 'LOCKED', unlocked: false },
   { id: 'sunken-yard', number: '05', name: 'SUNKEN YARD', description: 'Old machines are waking up beneath the wreckage.', progress: 0, stage: 'LOCKED', unlocked: false },
@@ -147,7 +148,7 @@ function MainMenu({ go, show }: { go: (screen: Screen) => void; show: (message: 
   );
 }
 
-function CampaignSelect({ go, show }: { go: (screen: Screen) => void; show: (message: string) => void }) {
+function CampaignSelect({ go, show, onLaunchGame }: { go: (screen: Screen) => void; show: (message: string) => void; onLaunchGame: (stage: GameStage) => void }) {
   const [active, setActive] = useState(1);
   const [viewportWidth, setViewportWidth] = useState(typeof window === 'undefined' ? 900 : window.innerWidth);
   const [dragX, setDragX] = useState(0);
@@ -230,9 +231,9 @@ function CampaignSelect({ go, show }: { go: (screen: Screen) => void; show: (mes
                     <div className="campaign-number">WORLD {campaign.number}</div>
                     <h2 className="display campaign-name">{campaign.name}</h2>
                     <p className="campaign-desc">{campaign.description}</p>
-                    <div className="campaign-meta">
-                      {campaign.unlocked ? <><span className="mono" style={{ color: 'var(--cream)', fontSize: 11 }}>LEVEL {campaign.stage}</span><span className="progress-line"><i style={{ width: `${campaign.progress}%` }} /></span></> : <span className="locked-mark"><LockKeyhole size={14} /> Finish World 02</span>}
-                      {index === active && <button className="game-button secondary" onClick={(event) => { event.stopPropagation(); campaign.unlocked ? (bastionUiAdapter.onLaunchCampaign?.(campaign.id), show(`Starting ${campaign.name}`)) : show('Finish the previous world to unlock this one'); }} data-testid={`button-enter-${campaign.id}`}>{campaign.unlocked ? 'Play' : 'Locked'}</button>}
+                   <div className="campaign-meta">
+                      {campaign.unlocked ? <><span className="mono" style={{ color: 'var(--cream)', fontSize: 11 }}>{campaign.stage}</span><span className="progress-line"><i style={{ width: `${campaign.progress}%` }} /></span></> : <span className="locked-mark"><LockKeyhole size={14} /> Finish World 02</span>}
+                      {index === active && <button className="game-button secondary" onClick={(event) => { event.stopPropagation(); campaign.unlocked && campaign.gameStage ? (bastionUiAdapter.onLaunchCampaign?.(campaign.id), onLaunchGame(campaign.gameStage), show(`Starting ${campaign.name}`)) : show('Finish the previous world to unlock this one'); }} data-testid={`button-enter-${campaign.id}`}>{campaign.unlocked ? 'Play' : 'Locked'}</button>}
                     </div>
                   </div>
                 </article>
@@ -242,6 +243,27 @@ function CampaignSelect({ go, show }: { go: (screen: Screen) => void; show: (mes
           <button className="carousel-arrow right" onClick={() => shift(1)} aria-label="Next campaign" data-testid="button-next-campaign"><ChevronRight size={28} /></button>
            <div className="dots">{campaigns.map((campaign, index) => <button key={campaign.id} className={`dot ${index === active ? 'active' : ''}`} onClick={() => { if (index !== active) shift(index > active ? 1 : -1); }} aria-label={`Select campaign ${index + 1}`} data-testid={`button-dot-${campaign.number}`} />)}</div>
         </div>
+      </div>
+    </div>
+  );
+}
+
+function GameScreen({ go, stage }: { go: (screen: Screen) => void; stage: GameStage }) {
+  const gamePath = `${import.meta.env.BASE_URL}game/index.html?stage=${stage}`;
+  return (
+    <div className="game-screen">
+      <iframe
+        key={stage}
+        className="game-frame"
+        src={gamePath}
+        title={`${stage === 'meadow' ? 'Meadow' : 'Town Square'} tower defense game`}
+        allow="autoplay"
+      />
+      <button className="game-exit" onClick={() => go('campaign')} data-testid="button-exit-game">
+        <ArrowLeft size={17} /> Campaign map
+      </button>
+      <div className="game-stage-chip" aria-live="polite">
+        {stage === 'meadow' ? 'MEADOW' : 'TOWN SQUARE'} // SELECT LEVEL
       </div>
     </div>
   );
@@ -436,9 +458,11 @@ function FutureStub({ go, kind }: { go: (screen: Screen) => void; kind: 1 | 2 | 
 
 function App() {
   const [screen, setScreen] = useState<Screen>('home');
+  const [gameStage, setGameStage] = useState<GameStage>('meadow');
   const toast = useToastMessage();
   const go = (next: Screen) => setScreen(next);
-  return <div className="game-app">{screen === 'home' && <MainMenu go={go} show={toast.show} />}{screen === 'campaign' && <CampaignSelect go={go} show={toast.show} />}{screen === 'store' && <Store go={go} show={toast.show} />}{screen === 'sound' && <Sound go={go} show={toast.show} />}{screen === 'settings' && <SettingsScreen go={go} show={toast.show} />}{screen === 'stub1' && <FutureStub go={go} kind={1} />}{screen === 'stub2' && <FutureStub go={go} kind={2} />}{screen === 'stub3' && <FutureStub go={go} kind={3} />}{toast.message && <div className="toast" role="status" data-testid="status-toast">{toast.message}</div>}</div>;
+  const launchGame = (stage: GameStage) => { setGameStage(stage); setScreen('game'); };
+  return <div className="game-app">{screen === 'home' && <MainMenu go={go} show={toast.show} />}{screen === 'campaign' && <CampaignSelect go={go} show={toast.show} onLaunchGame={launchGame} />}{screen === 'game' && <GameScreen go={go} stage={gameStage} />}{screen === 'store' && <Store go={go} show={toast.show} />}{screen === 'sound' && <Sound go={go} show={toast.show} />}{screen === 'settings' && <SettingsScreen go={go} show={toast.show} />}{screen === 'stub1' && <FutureStub go={go} kind={1} />}{screen === 'stub2' && <FutureStub go={go} kind={2} />}{screen === 'stub3' && <FutureStub go={go} kind={3} />}{toast.message && <div className="toast" role="status" data-testid="status-toast">{toast.message}</div>}</div>;
 }
 
 export default App;

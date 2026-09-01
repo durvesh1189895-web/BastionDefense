@@ -1556,6 +1556,63 @@ input:focus-visible {
   will-change: transform;
 }
 
+.game-screen {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #090b0d;
+  isolation: isolate;
+  animation: game-screen-in .32s cubic-bezier(.16, 1, .3, 1) both;
+}
+
+.game-frame {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  background: #090b0d;
+}
+
+.game-exit,
+.game-stage-chip {
+  position: absolute;
+  z-index: 3;
+  top: 16px;
+  border: 1px solid rgba(222, 228, 219, .42);
+  border-radius: 0;
+  background: rgba(9, 12, 13, .88);
+  color: var(--cream);
+  font: 10px var(--app-font-mono);
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  box-shadow: 0 5px 18px rgba(0,0,0,.28);
+}
+
+.game-exit {
+  left: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  cursor: pointer;
+  transition: color .2s ease, border-color .2s ease, background .2s ease, transform .2s cubic-bezier(.2,.8,.2,1);
+}
+
+.game-exit:hover {
+  color: var(--gold);
+  border-color: var(--gold);
+  background: rgba(24, 30, 28, .96);
+  transform: translateX(3px);
+}
+
+.game-stage-chip {
+  right: 16px;
+  padding: 11px 13px;
+  color: var(--gold);
+  pointer-events: none;
+}
+
 @media (max-width: 700px) {
   .resource {
     min-width: 62px;
@@ -1686,6 +1743,23 @@ input:focus-visible {
 
   .offer-card {
     padding: 10px 12px;
+  }
+
+  .game-exit,
+  .game-stage-chip {
+    top: 10px;
+  }
+
+  .game-exit {
+    left: 10px;
+    padding: 8px 10px;
+    font-size: 9px;
+  }
+
+  .game-stage-chip {
+    right: 10px;
+    padding: 9px 10px;
+    font-size: 9px;
   }
 }
 
