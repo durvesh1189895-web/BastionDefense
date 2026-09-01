@@ -20,7 +20,7 @@ export const bastionUiAdapter: BastionUiAdapter = {};
 export const assetSlots = {
   mainMenuBackground: 'main_menu_background.png',
   logo: 'bastion-defense-logo.png',
-  campaignBackgrounds: ['campaign_01_background.png', 'campaign_02_background.png', 'campaign_03_background.png', 'campaign_04_background.png', 'campaign_05_background.png'],
+  campaignBackgrounds: ['game/assets/map/meadow_open_map.png', 'game/assets/map/town_square_map.png', 'campaign_03_background.png', 'campaign_04_background.png', 'campaign_05_background.png'],
   defenseArt: ['store_defense_twin_cannon.png', 'store_defense_ballista.png', 'store_defense_arc_lens.png'],
   goldPackages: ['gold_package_small.png', 'gold_package_medium.png', 'gold_package_large.png', 'gold_package_mega.png'],
   diamondPackages: ['diamond_package_small.png', 'diamond_package_medium.png', 'diamond_package_large.png', 'diamond_package_mega.png'],
@@ -34,10 +34,13 @@ type GameStage = 'meadow' | 'town-square';
 function AssetLayer({ slot, className = '', alt = '' }: { slot: string; className?: string; alt?: string }) {
   const [visible, setVisible] = useState(true);
   if (!visible) return null;
+  const src = slot.includes('/')
+    ? `${import.meta.env.BASE_URL}${slot.replace(/^\/+/, '')}`
+    : `${import.meta.env.BASE_URL}assets/${slot}`;
   return (
     <img
       className={`asset-layer ${className}`}
-      src={`${import.meta.env.BASE_URL}assets/${slot}`}
+      src={src}
       alt={alt}
       onError={() => setVisible(false)}
     />
