@@ -119,6 +119,48 @@ const oneTimeOffer = {
   timeLeft: '7 DAYS LEFT',
 };
 
+const dailyRewards = [
+  { day: 1, kind: 'coin', amount: '2', label: '2 coins' },
+  { day: 2, kind: 'diamond', amount: '1', label: '1 diamond' },
+  { day: 3, kind: 'coin', amount: '4', label: '4 coins' },
+  { day: 4, kind: 'diamond', amount: '2', label: '2 diamonds' },
+  { day: 5, kind: 'coin', amount: '6', label: '6 coins' },
+  { day: 6, kind: 'diamond', amount: '3', label: '3 diamonds' },
+  { day: 7, kind: 'jackpot', amount: '10 + 5', label: '10 coins + 5 diamonds' },
+] as const;
+
+type DailyClaimState = {
+  day: number;
+  week: number;
+  lastClaimed: string;
+  lastClaimedDay: number;
+};
+
+const DAILY_CLAIM_STORAGE_KEY = 'bastion-daily-claim-stub';
+
+function localDateKey() {
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+}
+
+function readDailyClaimState(): DailyClaimState {
+  const fallback: DailyClaimState = { day: 1, week: 1, lastClaimed: '', lastClaimedDay: 0 };
+  if (typeof window === 'undefined') return fallback;
+  try {
+    const saved = window.localStorage.getItem(DAILY_CLAIM_STORAGE_KEY);
+    if (!saved) return fallback;
+    const parsed = JSON.parse(saved) as Partial<DailyClaimState>;
+    return {
+      day: Math.min(7, Math.max(1, Number(parsed.day) || 1)),
+      week: Math.max(1, Number(parsed.week) || 1),
+      lastClaimed: typeof parsed.lastClaimed === 'string' ? parsed.lastClaimed : '',
+      lastClaimedDay: Math.min(7, Math.max(0, Number(parsed.lastClaimedDay) || 0)),
+    };
+  } catch {
+    return fallback;
+  }
+}
+
 function useToastMessage() {
   const [message, setMessage] = useState('');
   useEffect(() => {
@@ -184,11 +226,62 @@ function MainMenu({ go, show, onOpenOffer }: { go: (screen: Screen) => void; sho
              <span className="home-offer-price">$5.99</span>
              <span className="home-offer-action">VIEW OFFER <ChevronRight size={14} /></span>
            </button>
+           <DailyClaim show={show} />
         </div>
         <div className="hero-character" aria-hidden="true"><span className="character-shadow" /><span className="character-cape" /><span className="character-body" /><span className="character-head"><i /><i /></span><span className="character-shield"><Shield size={44} /></span><span className="character-spark spark-one" /><span className="character-spark spark-two" /></div>
       </main>
       <div className="corner-label">A NEW ADVENTURE AWAITS</div>
     </div>
+  );
+}
+
+function DailyClaim({ show }: { show: (message: string) => void }) {
+  const [claimState, setClaimState] = useState<DailyClaimState>(readDailyClaimState);
+  const today = localDateKey();
+  const claimedToday = claimState.lastClaimed === today;
+  const reward = dailyRewards[claimState.day - 1];
+  const claim = () => {
+    if (claimedToday) {
+      show('Daily reward already claimed · come back tomorrow');
+      return;
+    }
+    const nextState: DailyClaimState = {
+      day: claimState.day === 7 ? 1 : claimState.day + 1,
+      week: claimState.day === 7 ? claimState.week + 1 : claimState.week,
+      lastClaimed: today,
+      lastClaimedDay: claimState.day,
+    };
+    setClaimState(nextState);
+    try {
+      window.localStorage.setItem(DAILY_CLAIM_STORAGE_KEY, JSON.stringify(nextState));
+    } catch {
+      // The local stub still works for this session if storage is unavailable.
+    }
+    show(`Day ${claimState.day} reward claimed · ${reward.label}`);
+  };
+  const completedToday = claimedToday && claimState.lastClaimedDay === 7;
+  const claimedThrough = completedToday ? 7 : claimState.day - 1;
+  return (
+    <section className="home-daily-claim" aria-label="Seven day daily claim">
+      <div className="home-daily-head">
+        <span><Gift size={13} /> DAILY CLAIM <small>WEEK {claimState.week}</small></span>
+        <button className="home-daily-button" onClick={claim} disabled={claimedToday} data-testid="button-daily-claim">
+          {completedToday ? 'WEEK COMPLETE' : claimedToday ? 'CLAIMED TODAY' : `CLAIM ${reward.amount} ${reward.kind === 'diamond' ? 'DIAMOND' : 'COINS'}`}
+        </button>
+      </div>
+      <div className="daily-reward-track">
+        {dailyRewards.map((item) => {
+          const isClaimed = item.day <= claimedThrough;
+          const isCurrent = item.day === claimState.day && !completedToday;
+          return (
+            <div className={`daily-reward-cell ${isClaimed ? 'claimed' : ''} ${isCurrent ? 'current' : ''}`} key={item.day}>
+              <small>DAY {item.day}</small>
+              <strong>{item.kind === 'coin' || item.kind === 'jackpot' ? <Coins size={13} /> : <Gem size={13} />}{item.amount}</strong>
+            </div>
+          );
+        })}
+      </div>
+    </section>
   );
 }
 

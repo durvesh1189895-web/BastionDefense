@@ -1137,6 +1137,122 @@ input {
   white-space: nowrap;
 }
 
+.home-daily-claim {
+  width: min(100%, 610px);
+  margin-top: 12px;
+  padding-top: 9px;
+  border-top: 1px solid rgba(222, 228, 219, .24);
+}
+
+.home-daily-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 7px;
+}
+
+.home-daily-head > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--gold);
+  font: 9px var(--app-font-mono);
+  font-weight: 700;
+  letter-spacing: .12em;
+}
+
+.home-daily-head > span small {
+  color: #89918c;
+  font-size: 8px;
+  letter-spacing: .08em;
+}
+
+.home-daily-button {
+  padding: 5px 8px;
+  border: 1px solid rgba(246, 184, 55, .65);
+  color: var(--gold);
+  background: rgba(246, 184, 55, .08);
+  cursor: pointer;
+  font: 8px var(--app-font-mono);
+  font-weight: 700;
+  letter-spacing: .08em;
+  transition: background .2s ease, color .2s ease, border-color .2s ease, transform .2s ease;
+}
+
+.home-daily-button:hover:not(:disabled) {
+  color: #17130b;
+  background: var(--gold);
+  border-color: #fff0a6;
+  transform: translateY(-1px);
+}
+
+.home-daily-button:disabled {
+  color: #7f8984;
+  border-color: rgba(222, 228, 219, .22);
+  cursor: not-allowed;
+}
+
+.daily-reward-track {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 4px;
+}
+
+.daily-reward-cell {
+  min-width: 0;
+  padding: 6px 2px 5px;
+  border: 1px solid rgba(222, 228, 219, .2);
+  background: rgba(17, 21, 22, .55);
+  color: #737d78;
+  text-align: center;
+  transition: border-color .2s ease, color .2s ease, background .2s ease, transform .2s ease;
+}
+
+.daily-reward-cell small {
+  display: block;
+  margin-bottom: 4px;
+  font: 7px var(--app-font-mono);
+  letter-spacing: .04em;
+}
+
+.daily-reward-cell strong {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  color: #9ca49f;
+  font: 700 10px var(--app-font-mono);
+}
+
+.daily-reward-cell strong svg {
+  color: #87918b;
+}
+
+.daily-reward-cell.claimed {
+  border-color: rgba(246, 184, 55, .34);
+  background: rgba(246, 184, 55, .08);
+  color: #a7935d;
+}
+
+.daily-reward-cell.claimed strong,
+.daily-reward-cell.claimed strong svg {
+  color: var(--gold);
+}
+
+.daily-reward-cell.current {
+  border-color: var(--gold);
+  background: rgba(246, 184, 55, .16);
+  color: #ffeaa0;
+  box-shadow: 0 0 14px rgba(246, 184, 55, .12);
+  transform: translateY(-2px);
+}
+
+.daily-reward-cell.current strong,
+.daily-reward-cell.current strong svg {
+  color: #fff0ae;
+}
+
 @keyframes home-offer-shine {
   0%, 38% { transform: translateX(-80%); }
   73%, 100% { transform: translateX(90%); }
@@ -2125,6 +2241,49 @@ input:focus-visible {
     border-top: 1px solid rgba(246, 184, 55, .28);
     border-left: 0;
     font-size: 8px;
+  }
+
+  .home-daily-claim {
+    margin-top: 9px;
+    padding-top: 7px;
+  }
+
+  .home-daily-head {
+    gap: 5px;
+  }
+
+  .home-daily-head > span {
+    font-size: 8px;
+  }
+
+  .home-daily-head > span small {
+    font-size: 7px;
+  }
+
+  .home-daily-button {
+    padding: 4px 5px;
+    font-size: 7px;
+  }
+
+  .daily-reward-track {
+    gap: 2px;
+  }
+
+  .daily-reward-cell {
+    padding: 5px 1px 4px;
+  }
+
+  .daily-reward-cell small {
+    font-size: 6px;
+  }
+
+  .daily-reward-cell strong {
+    font-size: 8px;
+  }
+
+  .daily-reward-cell strong svg {
+    width: 10px;
+    height: 10px;
   }
 
   .offer-card {
