@@ -1,0 +1,127 @@
+================================================================================
+BASTION DEFENSE - APK BUILD COMMANDS
+================================================================================
+
+IMPORTANT: Run these commands one by one in PowerShell or Command Prompt
+When you have stable internet connection.
+
+PATHS FOUND ON YOUR SYSTEM:
+- Android SDK: C:\Users\SAY3D\AppData\Local\Android\Sdk
+- Java JDK: C:\Program Files\Android\Android Studio\jbr
+- Project: c:\Users\SAY3D\Bastion Defense
+
+================================================================================
+STEP 1: SET ENVIRONMENT VARIABLES (Run these first)
+================================================================================
+
+$env:ANDROID_HOME = "C:\Users\SAY3D\AppData\Local\Android\Sdk"
+$env:JAVA_HOME = "C:\Program Files\Android\Android Studio\jbr"
+$env:PATH += ";$env:ANDROID_HOME\platform-tools;$env:ANDROID_HOME\cmdline-tools\latest\bin;$env:JAVA_HOME\bin"
+
+================================================================================
+STEP 2: INSTALL DEPENDENCIES (This will take time with slow internet)
+================================================================================
+
+cd "c:\Users\SAY3D\Bastion Defense\artifacts\bastion-defense-ui"
+
+npm install
+
+(Wait for this to complete - it might take 10-30 minutes with slow internet)
+(The catalog: error has been fixed - npm will work now!)
+
+================================================================================
+STEP 3: BUILD THE WEB APP
+================================================================================
+
+$env:CAPACITOR_BUILD = "true"
+npm run build
+
+(This creates the 'dist' folder with your game files)
+
+================================================================================
+STEP 4: INITIALIZE CAPACITOR ANDROID
+================================================================================
+
+npx cap add android
+
+(This creates the 'android' folder with Android project)
+
+================================================================================
+STEP 5: SYNC WEB FILES TO ANDROID
+================================================================================
+
+npx cap sync android
+
+================================================================================
+STEP 6: BUILD THE APK (Choose ONE method)
+================================================================================
+
+METHOD A - Using Gradle Command Line (Recommended):
+---------------------------------------------------
+cd android
+.\gradlew assembleDebug
+
+Your APK will be at:
+android\app\build\outputs\apk\debug\app-debug.apk
+
+
+METHOD B - Using Android Studio:
+---------------------------------
+npx cap open android
+
+Then in Android Studio:
+- Build → Build Bundle(s) / APK(s) → Build APK(s)
+- Find APK in: android\app\build\outputs\apk\debug\app-debug.apk
+
+================================================================================
+INSTALLING APK ON YOUR ANDROID PHONE
+================================================================================
+
+METHOD 1 - USB Install:
+-----------------------
+1. Enable USB Debugging on your phone
+2. Connect phone via USB
+3. cd android
+4. .\gradlew installDebug
+
+METHOD 2 - Manual Install:
+--------------------------
+1. Copy app-debug.apk to your phone
+2. Open it on your phone and tap Install
+3. You may need to enable "Install from Unknown Sources"
+
+================================================================================
+IF YOU GET ERRORS
+================================================================================
+
+ERROR: "ANDROID_HOME not found"
+SOLUTION: Run the environment variable commands from STEP 1 again
+
+ERROR: "Gradle sync failed"  
+SOLUTION: Make sure you have stable internet, delete android\.gradle folder and retry
+
+ERROR: "npm install timeout"
+SOLUTION: Try when you have better internet, or try: npm install --verbose
+
+ERROR: "BUILD FAILED"
+SOLUTION: 
+  cd android
+  .\gradlew clean
+  .\gradlew assembleDebug
+
+================================================================================
+QUICK REBUILD (After first successful build)
+================================================================================
+
+When you make changes to your game and want to rebuild:
+
+cd "c:\Users\SAY3D\Bastion Defense\artifacts\bastion-defense-ui"
+$env:CAPACITOR_BUILD = "true"
+npm run build
+npx cap sync android
+cd android
+.\gradlew assembleDebug
+
+APK Location: android\app\build\outputs\apk\debug\app-debug.apk
+
+================================================================================

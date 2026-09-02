@@ -21,14 +21,17 @@ if (Number.isNaN(port) || port <= 0) {
 
 const basePath = process.env.BASE_PATH;
 
-if (!basePath) {
+// For mobile builds, don't require BASE_PATH
+const isMobileBuild = process.env.CAPACITOR_BUILD === 'true';
+
+if (!basePath && !isMobileBuild) {
   throw new Error(
     'BASE_PATH environment variable is required but was not provided.',
   );
 }
 
 export default defineConfig({
-  base: basePath,
+  base: isMobileBuild ? './' : basePath,
   plugins: [
     react(),
     tailwindcss(),
@@ -61,7 +64,7 @@ export default defineConfig({
   },
   root: path.resolve(import.meta.dirname),
   build: {
-    outDir: path.resolve(import.meta.dirname, 'dist/public'),
+    outDir: path.resolve(import.meta.dirname, 'dist'),
     emptyOutDir: true,
   },
   server: {

@@ -222,7 +222,7 @@ function MainMenu({ go, show, onOpenOffer }: { go: (screen: Screen) => void; sho
           <button className="game-button primary" onClick={() => go('campaign')} data-testid="button-play"><Swords size={24} /> PLAY NOW</button>
           <div className="hero-reward"><Gift size={16} /><span>First win today</span><b>+250 GOLD</b></div>
            <button className="home-offer-banner" onClick={onOpenOffer} data-testid="button-main-menu-tesla-offer">
-             <span className="home-offer-copy"><span className="home-offer-kicker"><Sparkles size={13} /> 7 DAYS LEFT</span><strong>TESLA GOLD RUSH</strong><small>TESLA + 400 GOLD + 85 DIAMONDS</small></span>
+             <span className="home-offer-copy"><span className="home-offer-kicker"><Sparkles size={13} /> 7 DAYS LEFT</span><strong>TESLA GOLD RUSH</strong><small>LIMITED COMMANDER DROP</small><span className="home-offer-rewards" aria-label="Tesla offer rewards"><i><Zap size={12} /> TESLA</i><i><Coins size={12} /> 400 GOLD</i><i><Gem size={12} /> 85 DIAMONDS</i></span></span>
              <span className="home-offer-price">$5.99</span>
              <span className="home-offer-action">VIEW OFFER <ChevronRight size={14} /></span>
            </button>
@@ -237,6 +237,7 @@ function MainMenu({ go, show, onOpenOffer }: { go: (screen: Screen) => void; sho
 
 function DailyClaim({ show }: { show: (message: string) => void }) {
   const [claimState, setClaimState] = useState<DailyClaimState>(readDailyClaimState);
+  const [isOpen, setIsOpen] = useState(false);
   const today = localDateKey();
   const claimedToday = claimState.lastClaimed === today;
   const reward = dailyRewards[claimState.day - 1];
@@ -262,26 +263,42 @@ function DailyClaim({ show }: { show: (message: string) => void }) {
   const completedToday = claimedToday && claimState.lastClaimedDay === 7;
   const claimedThrough = completedToday ? 7 : claimState.day - 1;
   return (
-    <section className="home-daily-claim" aria-label="Seven day daily claim">
-      <div className="home-daily-head">
-        <span><Gift size={13} /> DAILY CLAIM <small>WEEK {claimState.week}</small></span>
-        <button className="home-daily-button" onClick={claim} disabled={claimedToday} data-testid="button-daily-claim">
-          {completedToday ? 'WEEK COMPLETE' : claimedToday ? 'CLAIMED TODAY' : `CLAIM ${reward.amount} ${reward.kind === 'diamond' ? 'DIAMOND' : 'COINS'}`}
-        </button>
-      </div>
-      <div className="daily-reward-track">
-        {dailyRewards.map((item) => {
-          const isClaimed = item.day <= claimedThrough;
-          const isCurrent = item.day === claimState.day && !completedToday;
-          return (
-            <div className={`daily-reward-cell ${isClaimed ? 'claimed' : ''} ${isCurrent ? 'current' : ''}`} key={item.day}>
-              <small>DAY {item.day}</small>
-              <strong>{item.kind === 'coin' || item.kind === 'jackpot' ? <Coins size={13} /> : <Gem size={13} />}{item.amount}</strong>
-            </div>
-          );
-        })}
-      </div>
-    </section>
+    <>
+      <button className="home-daily-launcher" onClick={() => setIsOpen(true)} data-testid="button-daily-claim" aria-haspopup="dialog">
+        <span><Gift size={14} /> DAILY CLAIM</span>
+        <small>{claimedToday ? 'CLAIMED TODAY' : `DAY ${claimState.day} READY`} <b>WEEK {claimState.week}</b></small>
+        <ChevronRight size={15} />
+      </button>
+      {isOpen && <div className="daily-claim-overlay" onMouseDown={(event) => { if (event.target === event.currentTarget) setIsOpen(false); }}>
+        <section className="daily-claim-modal" role="dialog" aria-modal="true" aria-labelledby="daily-claim-title" data-testid="modal-daily-claim">
+          <div className="daily-claim-modal-header">
+            <div><div className="eyebrow">COMMAND REWARD // WEEK {claimState.week}</div><h2 id="daily-claim-title" className="display">Daily <span>Claim</span></h2></div>
+            <button className="modal-close" onClick={() => setIsOpen(false)} aria-label="Close daily claim" data-testid="button-close-daily-claim"><X size={20} /></button>
+          </div>
+          <p className="daily-claim-lede">Check in every day to advance through the seven-day reward track. Complete Day 7 and the next week begins at Day 1.</p>
+          <div className="daily-claim-modal-head"><span>YOUR REWARD TRACK</span><b>{claimedToday ? 'RETURN TOMORROW' : `DAY ${claimState.day} READY`}</b></div>
+          <div className="daily-reward-track daily-reward-track-large">
+            {dailyRewards.map((item) => {
+              const isClaimed = item.day <= claimedThrough;
+              const isCurrent = item.day === claimState.day && !completedToday;
+              return (
+                <div className={`daily-reward-cell ${isClaimed ? 'claimed' : ''} ${isCurrent ? 'current' : ''}`} key={item.day}>
+                  <small>DAY {item.day}</small>
+                  <strong>{item.kind === 'coin' || item.kind === 'jackpot' ? <Coins size={16} /> : <Gem size={16} />}{item.amount}</strong>
+                  <span>{item.kind === 'jackpot' ? 'COINS + DIAMONDS' : item.kind === 'coin' ? 'COINS' : 'DIAMOND'}</span>
+                </div>
+              );
+            })}
+          </div>
+          <div className="daily-claim-modal-footer">
+            <span><Gift size={17} /> ONE CLAIM PER DAY</span>
+            <button className="home-daily-button" onClick={claim} disabled={claimedToday} data-testid="button-claim-daily-reward">
+              {completedToday ? 'WEEK COMPLETE' : claimedToday ? 'CLAIMED TODAY' : `CLAIM ${reward.amount} ${reward.kind === 'diamond' ? 'DIAMOND' : 'COINS'}`}
+            </button>
+          </div>
+        </section>
+      </div>}
+    </>
   );
 }
 
