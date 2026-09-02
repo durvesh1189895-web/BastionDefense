@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import type { CSSProperties, PointerEvent as ReactPointerEvent, ReactNode } from 'react';
 import {
-  ArrowLeft, ChevronLeft, ChevronRight, CircleHelp, Coins, Crosshair,
+  ArrowLeft, ArrowUp, Check, ChevronLeft, ChevronRight, CircleHelp, Coins, Crosshair,
   Crown, Gamepad2, Gem, Globe2, Hammer, Headphones, LockKeyhole, Map,
   Radio, Settings, Shield, ShoppingBag, SlidersHorizontal, Sparkles,
-  Swords, Target, Trophy, Volume2, Zap, Gift,
+  Swords, Target, Trophy, Volume2, X, Zap, Gift,
 } from 'lucide-react';
 
 export type BastionUiAdapter = {
@@ -36,7 +36,7 @@ export const assetSlots = {
   specialOffers: ['special_offer_01.png', 'special_offer_02.png', 'special_offer_03.png', 'special_offer_04.png'],
 } as const;
 
-type Screen = 'home' | 'campaign' | 'game' | 'store' | 'sound' | 'settings' | 'stub1' | 'stub2' | 'stub3';
+type Screen = 'home' | 'campaign' | 'game' | 'store' | 'sound' | 'settings' | 'profile' | 'stub1' | 'stub2' | 'stub3';
 type StoreTab = 'defenses' | 'gold' | 'diamonds' | 'offers';
 type GameStage = 'meadow' | 'town-square';
 
@@ -198,7 +198,7 @@ function MainMenu({ go, show, onOpenOffer }: { go: (screen: Screen) => void; sho
   ];
   const right = [
     { label: 'Settings', icon: <Settings size={20} />, screen: 'settings' as Screen },
-    { label: 'Ranks', icon: <Trophy size={20} />, screen: 'stub1' as Screen },
+    { label: 'Ranks', icon: <Trophy size={20} />, screen: 'profile' as Screen },
     { label: 'Events', icon: <Map size={20} />, screen: 'stub2' as Screen },
     { label: 'Allies', icon: <Radio size={20} />, screen: 'stub3' as Screen },
   ];
@@ -282,6 +282,70 @@ function DailyClaim({ show }: { show: (message: string) => void }) {
         })}
       </div>
     </section>
+  );
+}
+
+function ProfileScreen({ go, show }: { go: (screen: Screen) => void; show: (message: string) => void }) {
+  const achievements = [
+    { title: 'FIRST LINE', detail: 'Complete your first campaign level', progress: '1 / 1', done: true },
+    { title: 'STEADY HAND', detail: 'Upgrade any defense to Level 5', progress: '3 / 5', done: false },
+    { title: 'WALL KEEPER', detail: 'Hold 25 waves across all stages', progress: '18 / 25', done: false },
+  ];
+  const stats = [
+    { label: 'WAVES HELD', value: '18', icon: <Shield size={18} /> },
+    { label: 'VICTORIES', value: '07', icon: <Trophy size={18} /> },
+    { label: 'DEFENSES', value: '08', icon: <Target size={18} /> },
+    { label: 'BEST WAVE', value: '24', icon: <Zap size={18} /> },
+  ];
+  return (
+    <div className="screen profile-screen">
+      <TopBar onHome={() => go('home')} />
+      <div className="inner-screen">
+        <div className="screen-heading">
+          <div><div className="eyebrow">COMMAND RECORD // ACTIVE DUTY</div><h1 className="display screen-title">Commander <span>Profile</span></h1></div>
+          <BackButton onClick={() => go('home')} />
+        </div>
+        <div className="profile-layout">
+          <section className="profile-hero-panel" data-testid="panel-commander-profile">
+            <div className="profile-avatar-large"><Crown size={42} /></div>
+            <div className="profile-identity">
+              <div className="eyebrow">COMMANDER</div>
+              <h2 className="display">ALEXANDER VALE</h2>
+              <p>WALL WARDEN <span>·</span> ACTIVE SINCE 2026</p>
+              <div className="profile-xp-label"><span>COMMAND XP</span><b>7,240 / 10,000</b></div>
+              <div className="profile-xp-bar"><i style={{ width: '72%' }} /></div>
+              <small>LEVEL 08 <span>·</span> 2,760 XP TO LEVEL 09</small>
+            </div>
+            <div className="profile-rank-seal"><Crown size={28} /><span>RANK 08</span></div>
+          </section>
+
+          <section className="rank-progression-panel" data-testid="panel-rank-progression">
+            <div className="profile-section-heading"><div><div className="eyebrow">NEXT MILESTONE</div><h2 className="display">Rank <span>Progression</span></h2></div><ArrowUp size={20} /></div>
+            <div className="rank-ladder">
+              <div className="rank-node complete"><Check size={15} /><small>06</small><b>FRONTIER SENTINEL</b></div>
+              <div className="rank-line complete" />
+              <div className="rank-node current"><Crown size={17} /><small>08</small><b>WALL WARDEN</b></div>
+              <div className="rank-line" />
+              <div className="rank-node"><LockKeyhole size={15} /><small>10</small><b>IRON COMMANDER</b></div>
+            </div>
+            <div className="rank-progress-copy"><span>1,180 XP TO NEXT RANK</span><b>72%</b></div>
+            <div className="profile-xp-bar"><i style={{ width: '72%' }} /></div>
+          </section>
+
+          <section className="profile-stat-grid" aria-label="Commander statistics">
+            {stats.map((stat) => <article className="profile-stat-card" key={stat.label}><span>{stat.icon}</span><b>{stat.value}</b><small>{stat.label}</small></article>)}
+          </section>
+
+          <section className="achievements-panel" data-testid="panel-achievements">
+            <div className="profile-section-heading"><div><div className="eyebrow">FIELD RECORD</div><h2 className="display">Recent <span>Milestones</span></h2></div><Trophy size={20} /></div>
+            <div className="achievement-list">
+              {achievements.map((achievement) => <div className={`achievement-row ${achievement.done ? 'complete' : ''}`} key={achievement.title}><span className="achievement-icon">{achievement.done ? <Check size={17} /> : <Target size={17} />}</span><span><b>{achievement.title}</b><small>{achievement.detail}</small></span><strong>{achievement.progress}</strong></div>)}
+            </div>
+            <div className="utility-actions"><button className="game-button secondary" onClick={() => show('Full achievement archive is ready for integration')} data-testid="button-view-achievements"><Trophy size={16} /> View all achievements</button></div>
+          </section>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -442,12 +506,21 @@ function DefenseStore({ show }: { show: (message: string) => void }) {
   const [isDragging, setIsDragging] = useState(false);
   const [isSwitching, setIsSwitching] = useState(false);
   const [swipeDirection, setSwipeDirection] = useState<1 | -1>(1);
+  const [previewOpen, setPreviewOpen] = useState(false);
   const pointerStart = useRef<{ x: number; time: number; id: number } | null>(null);
   const transitionTimer = useRef<number | null>(null);
   const defense = defenses[active];
   useEffect(() => () => {
     if (transitionTimer.current !== null) window.clearTimeout(transitionTimer.current);
   }, []);
+  useEffect(() => {
+    if (!previewOpen) return;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setPreviewOpen(false);
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [previewOpen]);
   const selectDefense = (nextIndex: number, direction: 1 | -1) => {
     if (nextIndex === active || isSwitching) return;
     setSwipeDirection(direction);
@@ -463,15 +536,34 @@ function DefenseStore({ show }: { show: (message: string) => void }) {
   const level = levels[defense.id] ?? 1;
   const levelStats = getDefenseLevelStats(defense, level);
   const canUpgrade = level < DEFENSE_MAX_LEVEL;
+  const nextLevel = Math.min(DEFENSE_MAX_LEVEL, level + 1);
+  const nextStats = getDefenseLevelStats(defense, nextLevel);
+  const previewStatNames = ['POWER', 'RANGE', 'FIRE RATE', defense.area ? defense.areaUnit : 'AREA'];
+  const previewCurrentValues = [
+    levelStats.damage,
+    levelStats.range,
+    `${levelStats.fireRate.toFixed(2)} /s`,
+    defense.area ? `${levelStats.area} ${defense.areaUnit}` : 'SINGLE',
+  ];
+  const previewNextValues = [
+    nextStats.damage,
+    nextStats.range,
+    `${nextStats.fireRate.toFixed(2)} /s`,
+    defense.area ? `${nextStats.area} ${defense.areaUnit}` : 'SINGLE',
+  ];
   const upgradeDefense = () => {
     if (!canUpgrade) {
       show(`${defense.name} is at maximum stub level`);
       return;
     }
+    setPreviewOpen(true);
+  };
+  const confirmUpgrade = () => {
     const nextLevel = level + 1;
     setLevels((current) => ({ ...current, [defense.id]: nextLevel }));
     bastionUiAdapter.onUpgradeDefense?.(defense.gameId);
     show(`${defense.name} upgraded to Level ${nextLevel} · ${DEFENSE_UPGRADE_COST} coin stub`);
+    setPreviewOpen(false);
   };
   const shift = (direction: 1 | -1) => selectDefense((active + direction + defenses.length) % defenses.length, direction);
   const handlePointerDown = (event: ReactPointerEvent<HTMLDivElement>) => {
@@ -545,11 +637,25 @@ function DefenseStore({ show }: { show: (message: string) => void }) {
        <aside className="stats-panel" key={defense.id}>
          <h3 className="display">Make it stronger</h3>
          {statNames.map((name, index) => <div className="stat" key={name}><div className="stat-head"><span>{statIcons[index]} {name}</span><b>{values[index]}</b></div><div className="stat-bar"><i style={{ width: `${levelStats.bars[index]}%` }} /></div></div>)}
-         <button className="game-button secondary upgrade-button" onClick={upgradeDefense} disabled={!canUpgrade} data-testid="button-upgrade-defense">
-           <Hammer size={18} /> {canUpgrade ? 'Upgrade' : 'Max Level'} {canUpgrade && <><Coins size={16} /> {DEFENSE_UPGRADE_COST}</>}
+          <button className="game-button secondary upgrade-button" onClick={upgradeDefense} disabled={!canUpgrade} data-testid="button-upgrade-defense">
+            <Hammer size={18} /> {canUpgrade ? 'Preview Upgrade' : 'Max Level'} {canUpgrade && <><Coins size={16} /> {DEFENSE_UPGRADE_COST}</>}
          </button>
          <div className="upgrade-stub-note">LEVEL 1 → {DEFENSE_MAX_LEVEL} · GRADUAL STAT STUB · 1 COIN EACH</div>
       </aside>
+       {previewOpen && canUpgrade && <div className="upgrade-modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) setPreviewOpen(false); }}>
+         <section className="upgrade-modal" role="dialog" aria-modal="true" aria-labelledby="upgrade-preview-title" data-testid="modal-upgrade-preview">
+           <div className="upgrade-modal-header"><div><div className="eyebrow">ARMORY CONFIRMATION</div><h2 id="upgrade-preview-title" className="display">Upgrade <span>Preview</span></h2></div><button className="modal-close" onClick={() => setPreviewOpen(false)} aria-label="Close upgrade preview" data-testid="button-close-upgrade-preview"><X size={20} /></button></div>
+           <div className="upgrade-modal-defense">
+             <div className="upgrade-modal-art"><AssetLayer slot={assetSlots.defenseArt[active]} alt={`${defense.name} preview artwork`} /></div>
+             <div><div className="rarity">{defense.rarity} · NEXT LEVEL {String(nextLevel).padStart(2, '0')}</div><h3 className="display">{defense.name}</h3><p>Review the field impact before spending your upgrade coin.</p></div>
+           </div>
+           <div className="upgrade-comparison">
+             <div className="upgrade-comparison-head"><span>STAT</span><span>LV {String(level).padStart(2, '0')}</span><span>NEXT</span></div>
+             {previewStatNames.map((name, index) => <div className="upgrade-comparison-row" key={name}><span>{name}</span><b>{previewCurrentValues[index]}</b><ArrowUp size={13} /><strong>{previewNextValues[index]}</strong></div>)}
+           </div>
+           <div className="upgrade-modal-footer"><span><Coins size={17} /> COST <b>{DEFENSE_UPGRADE_COST} COIN</b></span><button className="game-button secondary" onClick={confirmUpgrade} data-testid="button-confirm-upgrade"><Check size={17} /> Confirm Level {nextLevel}</button></div>
+         </section>
+       </div>}
     </div>
   );
 }
@@ -645,7 +751,7 @@ function App() {
   const go = (next: Screen) => setScreen(next);
   const openStore = (tab: StoreTab = 'defenses') => { setStoreTab(tab); setScreen('store'); };
   const launchGame = (stage: GameStage) => { setGameStage(stage); setScreen('game'); };
-  return <div className="game-app">{screen === 'home' && <MainMenu go={go} show={toast.show} onOpenOffer={() => openStore('offers')} />}{screen === 'campaign' && <CampaignSelect go={go} show={toast.show} onLaunchGame={launchGame} />}{screen === 'game' && <GameScreen go={go} stage={gameStage} />}{screen === 'store' && <Store go={go} show={toast.show} initialTab={storeTab} />}{screen === 'sound' && <Sound go={go} show={toast.show} />}{screen === 'settings' && <SettingsScreen go={go} show={toast.show} />}{screen === 'stub1' && <FutureStub go={go} kind={1} />}{screen === 'stub2' && <FutureStub go={go} kind={2} />}{screen === 'stub3' && <FutureStub go={go} kind={3} />}{toast.message && <div className="toast" role="status" data-testid="status-toast">{toast.message}</div>}</div>;
+  return <div className="game-app">{screen === 'home' && <MainMenu go={go} show={toast.show} onOpenOffer={() => openStore('offers')} />}{screen === 'campaign' && <CampaignSelect go={go} show={toast.show} onLaunchGame={launchGame} />}{screen === 'game' && <GameScreen go={go} stage={gameStage} />}{screen === 'store' && <Store go={go} show={toast.show} initialTab={storeTab} />}{screen === 'sound' && <Sound go={go} show={toast.show} />}{screen === 'settings' && <SettingsScreen go={go} show={toast.show} />}{screen === 'profile' && <ProfileScreen go={go} show={toast.show} />}{screen === 'stub1' && <FutureStub go={go} kind={1} />}{screen === 'stub2' && <FutureStub go={go} kind={2} />}{screen === 'stub3' && <FutureStub go={go} kind={3} />}{toast.message && <div className="toast" role="status" data-testid="status-toast">{toast.message}</div>}</div>;
 }
 
 export default App;
