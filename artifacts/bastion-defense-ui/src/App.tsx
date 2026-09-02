@@ -111,6 +111,14 @@ const offers = [
   { title: 'COMMANDER KIT', description: 'Everything needed to hold one more wave.', reward: '4,800 GOLD  +  300 DIAMONDS', price: '$12.99', badge: 'HOT', color: '#d5a342', index: '04' },
 ];
 
+const oneTimeOffer = {
+  id: 'tesla-gold-rush',
+  title: 'TESLA GOLD RUSH',
+  description: 'Light up your next defense with a complete first strike package.',
+  price: '$5.99',
+  timeLeft: '7 DAYS LEFT',
+};
+
 function useToastMessage() {
   const [message, setMessage] = useState('');
   useEffect(() => {
@@ -473,13 +481,35 @@ function CurrencyStore({ type, show }: { type: 'gold' | 'diamonds'; show: (messa
 
 function Offers({ show }: { show: (message: string) => void }) {
   return (
-    <div className="offers-grid">
-      {offers.map((offer, index) => <article className="offer-card" data-index={offer.index} style={{ '--offer-color': offer.color } as CSSProperties} key={offer.index} data-testid={`card-offer-${offer.index}`}>
-        <AssetLayer slot={assetSlots.specialOffers[index]} className="offer-art-image" alt="" />
-        <div className="offer-info"><div className="eyebrow" style={{ color: offer.color }}>OFFER {offer.index}</div><h3 className="display">{offer.title}</h3><p>{offer.description}</p><div className="offer-reward">{offer.reward}</div></div>
-        <div className="offer-cta"><span className="offer-badge">{offer.badge}</span><button className="game-button" onClick={() => { bastionUiAdapter.onPurchase?.(`offer-${offer.index}`); show(`${offer.title} added to briefing`); }} data-testid={`button-get-offer-${offer.index}`}>GET · {offer.price}</button></div>
-      </article>)}
-    </div>
+    <>
+      <article className="one-time-offer" data-testid="card-offer-tesla-one-time">
+        <div className="one-time-offer-glow" aria-hidden="true" />
+        <AssetLayer slot="game/assets/defenses/arcane-turret.png" className="offer-hero-art-image" alt="Tesla Tower" />
+        <div className="one-time-offer-copy">
+          <div className="one-time-offer-kicker"><Sparkles size={15} /> ONE-TIME OFFER <span>{oneTimeOffer.timeLeft}</span></div>
+          <h2 className="display">{oneTimeOffer.title}</h2>
+          <p>{oneTimeOffer.description}</p>
+          <div className="one-time-rewards" aria-label="Offer rewards">
+            <span><Zap size={16} /> TESLA UNLOCK</span>
+            <span><Coins size={16} /> 400 GOLD</span>
+            <span><Gem size={16} /> 85 DIAMONDS</span>
+          </div>
+        </div>
+        <div className="one-time-offer-cta">
+          <span className="one-time-price-label">ONLY</span>
+          <strong>{oneTimeOffer.price}</strong>
+          <button className="game-button" onClick={() => { bastionUiAdapter.onPurchase?.(oneTimeOffer.id); show('Tesla Gold Rush added to briefing'); }} data-testid="button-get-offer-tesla-one-time">CLAIM OFFER</button>
+          <small>STUB CHECKOUT</small>
+        </div>
+      </article>
+      <div className="offers-grid">
+        {offers.map((offer, index) => <article className="offer-card" data-index={offer.index} style={{ '--offer-color': offer.color } as CSSProperties} key={offer.index} data-testid={`card-offer-${offer.index}`}>
+          <AssetLayer slot={assetSlots.specialOffers[index]} className="offer-art-image" alt="" />
+          <div className="offer-info"><div className="eyebrow" style={{ color: offer.color }}>OFFER {offer.index}</div><h3 className="display">{offer.title}</h3><p>{offer.description}</p><div className="offer-reward">{offer.reward}</div></div>
+          <div className="offer-cta"><span className="offer-badge">{offer.badge}</span><button className="game-button" onClick={() => { bastionUiAdapter.onPurchase?.(`offer-${offer.index}`); show(`${offer.title} added to briefing`); }} data-testid={`button-get-offer-${offer.index}`}>GET · {offer.price}</button></div>
+        </article>)}
+      </div>
+    </>
   );
 }
 
