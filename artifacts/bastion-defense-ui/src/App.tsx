@@ -149,7 +149,7 @@ function BackButton({ onClick, label = 'Main Menu' }: { onClick: () => void; lab
   return <button className="back-button" onClick={onClick} data-testid="button-back"><ArrowLeft size={17} /> {label}</button>;
 }
 
-function MainMenu({ go, show }: { go: (screen: Screen) => void; show: (message: string) => void }) {
+function MainMenu({ go, show, onOpenOffer }: { go: (screen: Screen) => void; show: (message: string) => void; onOpenOffer: () => void }) {
   const left = [
     { label: 'Shop', icon: <ShoppingBag size={20} />, screen: 'store' as Screen },
     { label: 'Audio', icon: <Volume2 size={20} />, screen: 'sound' as Screen },
@@ -179,6 +179,11 @@ function MainMenu({ go, show }: { go: (screen: Screen) => void; show: (message: 
           <p className="hero-copy">The kingdom is counting on you. Build brave defenses and stop the next wave.</p>
           <button className="game-button primary" onClick={() => go('campaign')} data-testid="button-play"><Swords size={24} /> PLAY NOW</button>
           <div className="hero-reward"><Gift size={16} /><span>First win today</span><b>+250 GOLD</b></div>
+           <button className="home-offer-banner" onClick={onOpenOffer} data-testid="button-main-menu-tesla-offer">
+             <span className="home-offer-copy"><span className="home-offer-kicker"><Sparkles size={13} /> 7 DAYS LEFT</span><strong>TESLA GOLD RUSH</strong><small>TESLA + 400 GOLD + 85 DIAMONDS</small></span>
+             <span className="home-offer-price">$5.99</span>
+             <span className="home-offer-action">VIEW OFFER <ChevronRight size={14} /></span>
+           </button>
         </div>
         <div className="hero-character" aria-hidden="true"><span className="character-shadow" /><span className="character-cape" /><span className="character-body" /><span className="character-head"><i /><i /></span><span className="character-shield"><Shield size={44} /></span><span className="character-spark spark-one" /><span className="character-spark spark-two" /></div>
       </main>
@@ -308,8 +313,8 @@ function GameScreen({ go, stage }: { go: (screen: Screen) => void; stage: GameSt
   );
 }
 
-function Store({ go, show }: { go: (screen: Screen) => void; show: (message: string) => void }) {
-  const [tab, setTab] = useState<StoreTab>('defenses');
+function Store({ go, show, initialTab = 'defenses' }: { go: (screen: Screen) => void; show: (message: string) => void; initialTab?: StoreTab }) {
+  const [tab, setTab] = useState<StoreTab>(initialTab);
   const changeTab = (nextTab: StoreTab) => {
     if (nextTab !== tab) setTab(nextTab);
   };
@@ -542,10 +547,12 @@ function FutureStub({ go, kind }: { go: (screen: Screen) => void; kind: 1 | 2 | 
 function App() {
   const [screen, setScreen] = useState<Screen>('home');
   const [gameStage, setGameStage] = useState<GameStage>('meadow');
+  const [storeTab, setStoreTab] = useState<StoreTab>('defenses');
   const toast = useToastMessage();
   const go = (next: Screen) => setScreen(next);
+  const openStore = (tab: StoreTab = 'defenses') => { setStoreTab(tab); setScreen('store'); };
   const launchGame = (stage: GameStage) => { setGameStage(stage); setScreen('game'); };
-  return <div className="game-app">{screen === 'home' && <MainMenu go={go} show={toast.show} />}{screen === 'campaign' && <CampaignSelect go={go} show={toast.show} onLaunchGame={launchGame} />}{screen === 'game' && <GameScreen go={go} stage={gameStage} />}{screen === 'store' && <Store go={go} show={toast.show} />}{screen === 'sound' && <Sound go={go} show={toast.show} />}{screen === 'settings' && <SettingsScreen go={go} show={toast.show} />}{screen === 'stub1' && <FutureStub go={go} kind={1} />}{screen === 'stub2' && <FutureStub go={go} kind={2} />}{screen === 'stub3' && <FutureStub go={go} kind={3} />}{toast.message && <div className="toast" role="status" data-testid="status-toast">{toast.message}</div>}</div>;
+  return <div className="game-app">{screen === 'home' && <MainMenu go={go} show={toast.show} onOpenOffer={() => openStore('offers')} />}{screen === 'campaign' && <CampaignSelect go={go} show={toast.show} onLaunchGame={launchGame} />}{screen === 'game' && <GameScreen go={go} stage={gameStage} />}{screen === 'store' && <Store go={go} show={toast.show} initialTab={storeTab} />}{screen === 'sound' && <Sound go={go} show={toast.show} />}{screen === 'settings' && <SettingsScreen go={go} show={toast.show} />}{screen === 'stub1' && <FutureStub go={go} kind={1} />}{screen === 'stub2' && <FutureStub go={go} kind={2} />}{screen === 'stub3' && <FutureStub go={go} kind={3} />}{toast.message && <div className="toast" role="status" data-testid="status-toast">{toast.message}</div>}</div>;
 }
 
 export default App;
