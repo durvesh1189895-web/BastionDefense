@@ -21,7 +21,16 @@ export const assetSlots = {
   mainMenuBackground: 'main_menu_background.png',
   logo: 'bastion-defense-logo.png',
   campaignBackgrounds: ['game/assets/map/meadow_open_map.png', 'game/assets/map/town_square_map.png', 'campaign_03_background.png', 'campaign_04_background.png', 'campaign_05_background.png'],
-  defenseArt: ['store_defense_twin_cannon.png', 'store_defense_ballista.png', 'store_defense_arc_lens.png'],
+  defenseArt: [
+    'game/assets/defenses/machine-gun-turret.png',
+    'game/assets/defenses/ballista-turret.png',
+    'game/assets/defenses/bomber-turret.png',
+    'game/assets/defenses/defense-cannon.png',
+    'game/assets/defenses/heavy-cannon.png',
+    'game/assets/defenses/cryo-turret.png',
+    'game/assets/defenses/flame-turret.png',
+    'game/assets/defenses/arcane-turret.png',
+  ],
   goldPackages: ['gold_package_small.png', 'gold_package_medium.png', 'gold_package_large.png', 'gold_package_mega.png'],
   diamondPackages: ['diamond_package_small.png', 'diamond_package_medium.png', 'diamond_package_large.png', 'diamond_package_mega.png'],
   specialOffers: ['special_offer_01.png', 'special_offer_02.png', 'special_offer_03.png', 'special_offer_04.png'],
@@ -56,10 +65,29 @@ const campaigns = [
 ];
 
 const defenses = [
-  { id: 'twin-cannon', name: 'TWIN CANNON', rarity: 'UNCOMMON', description: 'A rapid-fire twin barrel defense for swarms and light targets.', damage: '28', range: '250', fireRate: '0.70 /s', cost: '180', bars: [62, 74, 48, 36] },
-  { id: 'ballista', name: 'BALLISTA', rarity: 'RARE', description: 'A patient siege bow that punches through armored lanes.', damage: '74', range: '320', fireRate: '0.28 /s', cost: '420', bars: [86, 88, 28, 52] },
-  { id: 'arc-lens', name: 'ARC LENS', rarity: 'EPIC', description: 'A focused beam defense that chains between nearby targets.', damage: '51', range: '280', fireRate: '1.10 /s', cost: '680', bars: [72, 78, 68, 66] },
+  { id: 'twin-cannon', gameId: 'cannon', name: 'MACHINE GUN TURRET', rarity: 'UNCOMMON', description: 'A reliable first-target defense for swarms and light enemies.', damage: 28, range: 250, fireRate: .70, area: 0, areaUnit: 'SINGLE', cost: 180, bars: [62, 74, 48, 36] },
+  { id: 'ballista', gameId: 'mortar', name: 'BALLISTA TURRET', rarity: 'RARE', description: 'A patient siege bow that punches through armored lanes.', damage: 35, range: 280, fireRate: .50, area: 0, areaUnit: 'SINGLE', cost: 150, bars: [76, 82, 30, 44] },
+  { id: 'bomber', gameId: 'sniper', name: 'BOMBER TURRET', rarity: 'RARE', description: 'A lobbed explosive defense for clustered enemy groups.', damage: 60, range: 195, fireRate: 2.40, area: 97, areaUnit: 'RADIUS', cost: 250, bars: [82, 58, 42, 78] },
+  { id: 'defense-cannon', gameId: 'frost', name: 'DEFENSE CANNON', rarity: 'RARE', description: 'A direct elemental shell for enemies that get too close.', damage: 45, range: 250, fireRate: .90, area: 0, areaUnit: 'SINGLE', cost: 250, bars: [68, 70, 54, 38] },
+  { id: 'heavy-cannon', gameId: 'heavycannon', name: 'HEAVY CANNON', rarity: 'EPIC', description: 'A high-impact projectile built to punish elite targets.', damage: 56, range: 240, fireRate: .95, area: 0, areaUnit: 'SINGLE', cost: 450, bars: [94, 66, 28, 48] },
+  { id: 'cryo', gameId: 'rocket', name: 'CRYO TURRET', rarity: 'EPIC', description: 'A slowing ice zone that controls the pace of every lane.', damage: 12, range: 210, fireRate: 3, area: 75, areaUnit: 'RADIUS', cost: 430, bars: [52, 60, 66, 84] },
+  { id: 'flame', gameId: 'flame', name: 'FLAME TURRET', rarity: 'EPIC', description: 'A channeling flame defense that sweeps through groups.', damage: 15, range: 220, fireRate: 5, area: 5, areaUnit: 'TARGETS', cost: 500, bars: [64, 62, 74, 88] },
+  { id: 'arc-lens', gameId: 'tesla', name: 'TESLA TOWER', rarity: 'LEGENDARY', description: 'A chain-burst energy defense for enemies packed together.', damage: 75, range: 260, fireRate: 3, area: 7, areaUnit: 'JUMPS', cost: 380, bars: [88, 78, 72, 92] },
 ];
+
+const DEFENSE_MAX_LEVEL = 10;
+const DEFENSE_UPGRADE_COST = 1;
+
+function getDefenseLevelStats(defense: typeof defenses[number], level: number) {
+  const steps = Math.max(0, Math.min(DEFENSE_MAX_LEVEL, level) - 1);
+  return {
+    damage: Math.round(defense.damage * (1 + steps * 0.08)),
+    range: Math.round(defense.range * (1 + steps * 0.025)),
+    fireRate: defense.fireRate * (1 + steps * 0.04),
+    area: defense.area ? Math.max(1, Math.round(defense.area * (1 + steps * 0.07))) : 0,
+    bars: defense.bars.map((bar, index) => Math.min(100, bar + steps * [3, 2, 2, 3][index])),
+  };
+}
 
 const currencyPackages = {
   gold: [
@@ -303,6 +331,7 @@ function Store({ go, show }: { go: (screen: Screen) => void; show: (message: str
 
 function DefenseStore({ show }: { show: (message: string) => void }) {
   const [active, setActive] = useState(0);
+  const [levels, setLevels] = useState<Record<string, number>>({});
   const [dragX, setDragX] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const [isSwitching, setIsSwitching] = useState(false);
@@ -324,6 +353,19 @@ function DefenseStore({ show }: { show: (message: string) => void }) {
       setIsSwitching(false);
       transitionTimer.current = null;
     }, 240);
+  };
+  const level = levels[defense.id] ?? 1;
+  const levelStats = getDefenseLevelStats(defense, level);
+  const canUpgrade = level < DEFENSE_MAX_LEVEL;
+  const upgradeDefense = () => {
+    if (!canUpgrade) {
+      show(`${defense.name} is at maximum stub level`);
+      return;
+    }
+    const nextLevel = level + 1;
+    setLevels((current) => ({ ...current, [defense.id]: nextLevel }));
+    bastionUiAdapter.onUpgradeDefense?.(defense.gameId);
+    show(`${defense.name} upgraded to Level ${nextLevel} · ${DEFENSE_UPGRADE_COST} coin stub`);
   };
   const shift = (direction: 1 | -1) => selectDefense((active + direction + defenses.length) % defenses.length, direction);
   const handlePointerDown = (event: ReactPointerEvent<HTMLDivElement>) => {
@@ -361,9 +403,14 @@ function DefenseStore({ show }: { show: (message: string) => void }) {
     selectDefense((active + direction + defenses.length) % defenses.length, direction);
   };
   const handlePointerUp = (event: ReactPointerEvent<HTMLDivElement>) => finishPointer(event);
-  const statIcons = [<Zap size={16} />, <Target size={16} />, <Crosshair size={16} />, <Coins size={16} />];
-  const statNames = ['DAMAGE', 'RANGE', 'FIRE RATE', 'UPGRADING COST'];
-  const values = [defense.damage, defense.range, defense.fireRate, defense.cost];
+   const statIcons = [<Zap size={16} />, <Target size={16} />, <Crosshair size={16} />, <Globe2 size={16} />];
+   const statNames = ['POWER', 'RANGE', 'FIRE RATE', defense.area ? defense.areaUnit : 'AREA'];
+   const values = [
+     levelStats.damage,
+     levelStats.range,
+     `${levelStats.fireRate.toFixed(2)} /s`,
+     defense.area ? `${levelStats.area} ${defense.areaUnit}` : 'SINGLE',
+   ];
   return (
     <div className="defense-layout">
       <section className="defense-showcase">
@@ -377,7 +424,7 @@ function DefenseStore({ show }: { show: (message: string) => void }) {
            data-testid="defense-swipe-surface"
          >
            <div key={defense.id} className={`defense-hero-content ${swipeDirection > 0 ? 'enter-from-right' : 'enter-from-left'}`}>
-             <div className="defense-title"><div className="rarity">{defense.rarity} · LEVEL 04</div><h2 className="display">{defense.name}</h2><p>{defense.description}</p><span className="defense-hint">Swipe to cycle arsenal</span></div>
+              <div className="defense-title"><div className="rarity">{defense.rarity} · LEVEL {String(level).padStart(2, '0')} / {DEFENSE_MAX_LEVEL}</div><h2 className="display">{defense.name}</h2><p>{defense.description}</p><span className="defense-hint">Swipe to cycle arsenal</span></div>
              <div className="tower-orb" aria-label={`${defense.name} asset placeholder`} data-asset-slot={assetSlots.defenseArt[active]} data-testid="asset-defense-artwork">
                <AssetLayer slot={assetSlots.defenseArt[active]} alt={`${defense.name} artwork`} />
              </div>
@@ -391,8 +438,11 @@ function DefenseStore({ show }: { show: (message: string) => void }) {
       </section>
        <aside className="stats-panel" key={defense.id}>
          <h3 className="display">Make it stronger</h3>
-        {statNames.map((name, index) => <div className="stat" key={name}><div className="stat-head"><span>{statIcons[index]} {name}</span><b>{values[index]}</b></div><div className="stat-bar"><i style={{ width: `${defense.bars[index]}%` }} /></div></div>)}
-        <button className="game-button secondary upgrade-button" onClick={() => { bastionUiAdapter.onUpgradeDefense?.(defense.id); show(`${defense.name} upgrade requested`); }} data-testid="button-upgrade-defense"><Hammer size={18} /> Upgrade <Coins size={16} /> {defense.cost}</button>
+         {statNames.map((name, index) => <div className="stat" key={name}><div className="stat-head"><span>{statIcons[index]} {name}</span><b>{values[index]}</b></div><div className="stat-bar"><i style={{ width: `${levelStats.bars[index]}%` }} /></div></div>)}
+         <button className="game-button secondary upgrade-button" onClick={upgradeDefense} disabled={!canUpgrade} data-testid="button-upgrade-defense">
+           <Hammer size={18} /> {canUpgrade ? 'Upgrade' : 'Max Level'} {canUpgrade && <><Coins size={16} /> {DEFENSE_UPGRADE_COST}</>}
+         </button>
+         <div className="upgrade-stub-note">LEVEL 1 → {DEFENSE_MAX_LEVEL} · GRADUAL STAT STUB · 1 COIN EACH</div>
       </aside>
     </div>
   );

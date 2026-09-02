@@ -1184,6 +1184,20 @@ input {
   box-shadow: inset 0 0 0 1px rgba(230,243,45,.08);
 }
 
+.upgrade-stub-note {
+  margin-top: 10px;
+  color: #7f8984;
+  font: 9px var(--app-font-mono);
+  letter-spacing: .1em;
+  line-height: 1.45;
+  text-align: center;
+}
+
+.upgrade-button:disabled {
+  cursor: not-allowed;
+  opacity: .65;
+}
+
 .upgrade-button:hover {
   color: #11150f;
   background: var(--gold);
