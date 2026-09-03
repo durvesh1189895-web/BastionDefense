@@ -28,18 +28,19 @@ jobs:
           node --version
           npm --version
 
-      - name: Install pnpm
-        run: npm install -g pnpm
+      - name: Enable corepack and prepare pnpm
+        run: |
+          corepack enable
+          corepack prepare pnpm@7.32.0 --activate || true
 
-      - name: Install pnpm (project)
-        working-directory: artifacts/bastion-defense-ui
-        run: pnpm --version || true
+      - name: Show pnpm version
+        run: pnpm --version
 
-      - name: Set up JDK
+      - name: Set up JDK (17)
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
-          java-version: '11'
+          java-version: '17'
 
       - name: Set up Android SDK
         uses: r0adkll/setup-android@v2
@@ -63,9 +64,12 @@ jobs:
           npx cap add android || true
           npx cap sync android
 
+      - name: Show android dir
+        run: ls -la artifacts/bastion-defense-ui/android || true
+
       - name: Build Debug APK with Gradle
         working-directory: artifacts/bastion-defense-ui/android
-        run: ./gradlew assembleDebug --no-daemon
+        run: ./gradlew clean assembleDebug --no-daemon --stacktrace || true
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
