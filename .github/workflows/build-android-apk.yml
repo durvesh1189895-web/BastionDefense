@@ -17,14 +17,23 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install pnpm
-        run: npm install -g pnpm
-
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '22'
           cache: 'pnpm'
+
+      - name: Show Node & npm versions
+        run: |
+          node --version
+          npm --version
+
+      - name: Install pnpm
+        run: npm install -g pnpm
+
+      - name: Install pnpm (project)
+        working-directory: artifacts/bastion-defense-ui
+        run: pnpm --version || true
 
       - name: Set up JDK
         uses: actions/setup-java@v4
@@ -33,7 +42,7 @@ jobs:
           java-version: '11'
 
       - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
+        uses: r0adkll/setup-android@v2
         with:
           api-level: 33
           build-tools: '33.0.2'
