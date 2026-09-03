@@ -1282,6 +1282,25 @@ function tileToWorldCenter(col, row){ return { x: col * TILE_SIZE + TILE_SIZE / 
 function worldToTile(x, y){ return { col: Math.floor(x / TILE_SIZE), row: Math.floor(y / TILE_SIZE) }; }
 function distSq(ax, ay, bx, by){ const dx = ax - bx, dy = ay - by; return dx * dx + dy * dy; }
 
+// PERF: most per-frame "drop dead/expired items" lists (enemies,
+// projectiles, attack effects, damage numbers, cryo zones, obstacles)
+// have nothing to remove on a given frame, yet the old code called
+// `.filter()` unconditionally every frame regardless — allocating a
+// brand-new array 60x/sec even when it would be identical to the old
+// one. That's needless GC pressure, a real source of stutter on mobile.
+// This returns the SAME array reference when nothing was removed, and
+// only allocates a new filtered one when something actually died.
+// `isAlive` must be a pure check (no side effects) since it may run
+// twice on the same item — do not use this for filters that also
+// resolve/apply something as a side effect of returning false.
+function pruneDead(arr, isAlive){
+  let dirty = false;
+  for (let i = 0; i < arr.length; i++){
+    if (!isAlive(arr[i])) { dirty = true; break; }
+  }
+  return dirty ? arr.filter(isAlive) : arr;
+}
+
 // Tesla Tower: turns one hop of a chain-lightning hit into a jagged
 // polyline (a handful of points nudged perpendicular to the straight
 // line) so it reads as a lightning bolt instead of a laser. Purely
@@ -1326,11 +1345,11 @@ function jitterLightning(a, b, steps){
 // to a future rework, so these no longer line up with the new base stats
 // and should not be treated as tuned.
 const DefenseData = [
-  { id:'cannon', name:'Machine Gun Turret', cost:180, icon:'💣', asset:'machine-gun-turret.png', projectileAsset:'bullet.png', tint:'#8f97a3',
+  { id:'cannon', name:'Machine Gun Turret', cost:120, icon:'💣', asset:'machine-gun-turret.png', projectileAsset:'bullet.png', tint:'#8f97a3',
     // Still a single hitscan shot per attack (see 'instant' note below),
     // now with bullet.png physically flying to the target as a visual
     // flourish — single-target only, splashRadius stays 0 (no area hit).
-    testEnabled:true, category:'ballistic', range:250, fireRate:0.7, damage:28,
+    testEnabled:true, category:'ballistic', range:250, fireRate:0.97, damage:35,
     // 'instant' per spec: a single straight hitscan shot ("one bullet,
     // straight to per enemy"), not a travelling projectile.
     attackType:'instant', projectileSpeed:520, splashRadius:0, targetingMode:'first',
@@ -1342,10 +1361,10 @@ const DefenseData = [
       { level:5, statOverrides:{ damage:112, fireRate:0.95 }, duration:90 },
       { level:6, statOverrides:{ damage:145, splashRadius:55 }, visual:{ tint:'#ffb347' }, duration:180 },
     ] },
-  { id:'mortar', name:'Ballista Turret', cost:150, icon:'🎯', asset:'ballista-turret.png', projectileAsset:'ballista-arrow.png', tint:'#a3794f',
+  { id:'mortar', name:'Ballista Turret', cost:100, icon:'🎯', asset:'ballista-turret.png', projectileAsset:'ballista-arrow.png', tint:'#a3794f',
     // category is 'ballistic' (physical arrow, not explosive) — same
     // resistance family as Machine Gun Turret's bullet.
-    testEnabled:true, category:'ballistic', range:280, fireRate:0.5, damage:35,
+    testEnabled:true, category:'ballistic', range:280, fireRate:0.79, damage:45,
     attackType:'projectile', projectileSpeed:340, splashRadius:0, targetingMode:'strongest',
     upgradeCosts:[230, 380, 600, 980, 1500],
     upgradeLevels:[
@@ -1356,8 +1375,8 @@ const DefenseData = [
       { level:6, statOverrides:{ damage:95, splashRadius:105 }, visual:{ tint:'#c9962f' }, duration:200 },
     ] },
   { id:'sniper', name:'Bomber Turret',   cost:250, icon:'🔭', asset:'bomber-turret.png', projectileAsset:'bomb-throw.png', tint:'#6b7480',
-     testEnabled:true, category:'explosive', range:195, fireRate:2.4, damage:60,
-     attackType:'projectile', projectileSpeed:380, splashRadius:97, targetingMode:'first',
+     testEnabled:true, category:'explosive', range:195, fireRate:0.1, damage:60,
+     attackType:'projectile', projectileSpeed:79, splashRadius:97, targetingMode:'first',
      rotates:false, // stays fixed in its placed orientation — never turns to face a target
      // A real thrown/lobbed arc, not a homing dot — see the Projectile
      // constructor and CombatSystem.updateProjectiles()/drawProjectiles().
@@ -1371,8 +1390,8 @@ const DefenseData = [
        {level:4,statOverrides:{damage:320,fireRate:.34},duration:52},{level:5,statOverrides:{damage:410},duration:95},
        {level:6,statOverrides:{damage:520,range:640},visual:{tint:'#b8c8d5'},duration:180}
      ] },
-  { id:'frost',  name:'Defense Cannon',  cost:250, icon:'❄️', asset:'defense-cannon.png', projectileAsset:'cannonball.png', tint:'#63cdf0',
-     testEnabled:true, category:'elemental', range:250, fireRate:0.9, damage:45,
+  { id:'frost',  name:'Defense Cannon',  cost:200, icon:'❄️', asset:'defense-cannon.png', projectileAsset:'cannonball.png', tint:'#63cdf0',
+     testEnabled:true, category:'elemental', range:250, fireRate:0.55, damage:75,
      attackType:'projectile', projectileSpeed:480, splashRadius:0, targetingMode:'closest',
      upgradeCosts:[380, 630, 1000, 1630, 2500],
      upgradeLevels:[
@@ -1385,8 +1404,8 @@ const DefenseData = [
     // cannon, not the electricity tower (see id:'tesla' below). Same
     // travel mechanic as Defense Cannon (projectile, same speed), just
     // more damage.
-    testEnabled:true, category:'ballistic', range:240, fireRate:0.95, damage:56,
-    attackType:'projectile', projectileSpeed:480, splashRadius:0, targetingMode:'closest',
+    testEnabled:true, category:'ballistic', range:240, fireRate:0.4, damage:107,
+    attackType:'projectile', projectileSpeed:400, splashRadius:0, targetingMode:'closest',
     upgradeCosts:[450, 750, 1200, 1950, 3000],
     upgradeLevels:[
       { level:2, statOverrides:{ damage:9, fireRate:3.6 }, duration:18 },
@@ -1406,7 +1425,7 @@ const DefenseData = [
      // EnemyManager) for `duration` on every tick that hits them.
      // `splashRadius` above just mirrors `zoneEffect.radius` for the info
      // panel; the real gameplay radius is zoneEffect.radius.
-     zoneEffect:{ radius:75, tickDamage:12, tickInterval:0.25, slowMultiplier:0.3, duration:3 },
+     zoneEffect:{ radius:75, tickDamage:5, tickInterval:0.97, slowMultiplier:0.3, duration:3 },
      upgradeCosts:[530, 880, 1400, 2280, 3500],
      upgradeLevels:[
        {level:2,statOverrides:{damage:128},duration:20},{level:3,statOverrides:{damage:168,splashRadius:125},duration:40},
@@ -1423,7 +1442,7 @@ const DefenseData = [
      // `tickDamage` into each of them every `tickInterval` for `duration`
      // seconds, then rests for `cooldown` before locking on again.
      attackType:'channel', projectileSpeed:0, splashRadius:0, targetingMode:'closest',
-     channel:{ maxTargets:5, tickInterval:0.2, tickDamage:15, duration:4, cooldown:3 },
+     channel:{ maxTargets:5, tickInterval:3, tickDamage:3.5, duration:4, cooldown:5 },
      upgradeCosts:[600, 1000, 1600, 2600, 4000],
      upgradeLevels:[
        {level:2,statOverrides:{damage:21,range:190},duration:22},{level:3,statOverrides:{damage:29,fireRate:1.8},duration:44},
@@ -1436,7 +1455,7 @@ const DefenseData = [
      // exists yet, so this still draws the Arcane Turret art as a
      // placeholder until a real asset is supplied — swap `asset` when
      // one exists.
-     testEnabled:true, category:'energy', range:260, fireRate:3, damage:75,
+     testEnabled:true, category:'energy', range:260, fireRate:3, damage:35,
      attackType:'instant', projectileSpeed:0, splashRadius:0, targetingMode:'weakest',
      rotates:false, // stays fixed in its placed orientation — never turns to face a target
      // Any defense carrying a `syncDuration` is routed by updateDefenses()
@@ -1462,12 +1481,19 @@ const DefenseData = [
      ] },
 ];
 
+// PERF: DefenseData.find(d => d.id === x) was a linear scan repeated every
+// frame for every placed defense (in updateDefenses AND drawDefenses, plus
+// once more inside fire() on every shot) — cheap per-call on an 8-item
+// array, but it adds up across dozens of defenses at 60fps. One Map built
+// once at load time turns every one of those into an O(1) lookup.
+const DefenseDataById = new Map(DefenseData.map(d => [d.id, d]));
+
 // The one place that should ever read `upgradeCosts` — returns the price of
 // a defense's *next* upgrade given its current level (0 = not yet upgraded),
 // or null once maxed. Called by UpgradeManager (Section 12) — Prompt 6 built
 // the pricing curve, Prompt 7 is its first real caller.
 function getUpgradeCost(defTypeId, currentLevel){
-  const type = DefenseData.find(d => d.id === defTypeId);
+  const type = DefenseDataById.get(defTypeId);
   if (!type || !Array.isArray(type.upgradeCosts)) return null;
   return type.upgradeCosts[currentLevel] ?? null;
 }
@@ -1527,29 +1553,34 @@ const PowerData = [
 // Flying/Special/Boss are named here as the future roster grows into them.
 const EnemyData = [
   { id:'basic', name:'Basic Grunt',    family:'basic', icon:'👺', sprite:'basic-grunt.png',
-    health:135, speed:45,  scale:1.0,  reward:3,  routeBehavior:'shortest',
+    health:165, speed:25,  scale:1.0,  reward:3,  routeBehavior:'shortest',
     abilities:[], animState:'walk', sfx:null },
   { id:'fast',  name:'Fast Raider',    family:'fast',  icon:'🏹', sprite:'fast-raider.png',
-    health:105, speed:78, scale:0.85, reward:3,  routeBehavior:'shortest',
+    health:135, speed:48, scale:0.85, reward:3,  routeBehavior:'shortest',
     abilities:[], animState:'walk', sfx:null },
   { id:'heavy', name:'Heavy Brute',    family:'heavy', icon:'👹', sprite:'heavy-brute.png',
-    health:325, speed:24,  scale:1.3,  reward:8,  routeBehavior:'longest',
+    health:425, speed:8,  scale:1.3,  reward:8,  routeBehavior:'longest',
     abilities:[], resistances:{ ballistic:0.25 }, animState:'walk', sfx:null },
   { id:'swarm', name:'Swarm Rat',      family:'swarm', icon:'🐀', sprite:'swarm-rat.png',
-    health:82,  speed:84, scale:0.6,  reward:1,  routeBehavior:'shortest',
+    health:52,  speed:64, scale:0.4,  reward:1,  routeBehavior:'shortest',
     abilities:[], animState:'walk', sfx:null },
   // Display name only — id stays 'elite' and sprite stays elite-warlord.png
   // (no renamed asset to point at) so saves/art continue to resolve.
   { id:'elite', name:'Elite Warrior',  family:'elite', icon:'🧌', sprite:'elite-warlord.png',
-    health:470, speed:38,  scale:1.15, reward:15, routeBehavior:'longest',
+    health:770, speed:18,  scale:1.15, reward:15, routeBehavior:'longest',
     abilities:[], resistances:{ explosive:0.15 }, animState:'walk', sfx:null },
   // Prompt 9: no longer just a placeholder — Wave 7 below is the first
   // wave to actually spawn a Scout, exercising the "special enemy
   // introductions" difficulty lever the doc asks for.
   { id:'scout', name:'Scout Walker',   family:'special', icon:'🤖', sprite:'scout-walker.png',
-    health:115, speed:75, scale:0.9,  reward:4,  routeBehavior:'shortest',
+    health:215, speed:58, scale:0.9,  reward:4,  routeBehavior:'shortest',
     abilities:[], animState:'walk', sfx:null },
 ];
+
+// PERF: same reasoning as DefenseDataById above — EnemyData.find(...) was
+// re-scanned per enemy per frame in drawEnemies() (and again on every
+// spawn), so one Map built once turns those into O(1) lookups too.
+const EnemyDataById = new Map(EnemyData.map(e => [e.id, e]));
 
 // Prompt 9: the full set of wave archetypes the doc asks to "prepare
 // support for" — only NORMAL and MIXED are actually used by the authored
@@ -4069,7 +4100,7 @@ function initFortressDefense(highestUnlockedMap){
   });
   back.addEventListener('click', () => {
     screen.classList.add('hidden');
-    showBattleMap(requestedStage, requestedStage === 'town-square' ? townSquareHighestUnlockedMap : highestUnlockedMap);
+    showBattleMap('meadow', highestUnlockedMap);
   });
   startTest.addEventListener('click', () => {
     startFortressTest();
@@ -4286,7 +4317,7 @@ class GameMap {
        route.spawnPointIndex == null || route.spawnPointIndex === spawnIndex
      );
      if (!options.length) options = this.routeOptions;
-     const type = EnemyData.find(enemy => enemy.id === typeId);
+     const type = EnemyDataById.get(typeId);
      const highHealth = !!(type && type.health >= 200);
      let selected = highHealth
        ? (options.find(route => route.preference === 'long') || options[options.length - 1])
@@ -4414,7 +4445,7 @@ class Enemy {
   // exactly as before). This is genuine per-enemy baseline scaling, not a
   // temporary effect like Prompt 8's speedMultiplier debuff below.
   constructor(typeId, spawnPoint, path, waveNumber, difficulty){
-    const type = EnemyData.find(e => e.id === typeId) || EnemyData[0];
+    const type = EnemyDataById.get(typeId) || EnemyData[0];
     const diff = difficulty || DEFAULT_WAVE_DIFFICULTY;
     this.id = __enemyIdSeq++;
     this.typeId = type.id;
@@ -4645,7 +4676,7 @@ class EnemyManager {
     // Real wave enemies are removed once resolved and their brief visual
     // delay elapses; dev-loop ones are handled by the respawn branch
     // above instead, so they never match this filter.
-    this.enemies = this.enemies.filter(e => !(e.isResolved && e.exitTimer <= 0 && e.waveNumber != null));
+    this.enemies = pruneDead(this.enemies, e => !(e.isResolved && e.exitTimer <= 0 && e.waveNumber != null));
   }
 
   aliveEnemies(){
@@ -4910,7 +4941,7 @@ class CombatSystem {
     this.cryoZones = [];
   }
 
-  defenseTypeOf(instance){ return DefenseData.find(d => d.id === instance.typeId); }
+  defenseTypeOf(instance){ return DefenseDataById.get(instance.typeId); }
 
   canPlace(col, row){
     const pad = this.map.buildPads.find(p => p.col === col && p.row === row);
@@ -4985,7 +5016,7 @@ class CombatSystem {
   fire(instance, resolved, target){
     this.bus.emit('combat:attackFired', { defenseId:instance.id, targetId:target.id });
     instance.fireFlash = 0.18;
-    const type = DefenseData.find(d => d.id === instance.typeId);
+    const type = DefenseDataById.get(instance.typeId);
     const targetAngle = Math.atan2(target.pos.y - instance.pos.y, target.pos.x - instance.pos.x);
     const muzzle = { x:instance.pos.x + Math.cos(targetAngle) * 24, y:instance.pos.y + Math.sin(targetAngle) * 24 };
     const addProjectile = (fromPos, options) => {
@@ -5041,7 +5072,9 @@ class CombatSystem {
       // Prompt 7: combat always reads the defense's *current* level, never
       // a target/pending level — this is what makes "keeps its current
       // stats until the upgrade actually completes" true for free.
-      const resolved = Object.assign({}, type, resolveDefenseStats(type, instance.level));
+      // PERF: resolveFullDefenseStats is cached per type+level (see its
+      // definition) instead of cloning the whole type object every frame.
+      const base = resolveFullDefenseStats(type, instance.level);
 
       // Prompt 8: a Temporary Boost (if active) multiplies THIS FRAME's
       // resolved stats only — resolveDefenseStats' memoized cache and
@@ -5050,10 +5083,7 @@ class CombatSystem {
       // instant instance.tempBuff clears (PowerManager, Section 14), which
       // is the entire "restore original stats afterward" mechanism — there
       // is nothing to restore because the base was never overwritten.
-      if (instance.tempBuff){
-        resolved.damage = resolved.damage * instance.tempBuff.damageMultiplier;
-        resolved.fireRate = resolved.fireRate * instance.tempBuff.fireRateMultiplier;
-      }
+      const resolved = applyTempBuff(base, instance.tempBuff);
 
       instance.cooldownRemaining = Math.max(0, instance.cooldownRemaining - dt);
       if (instance.fireFlash > 0) instance.fireFlash = Math.max(0, instance.fireFlash - dt);
@@ -5151,14 +5181,14 @@ class CombatSystem {
         p.pos.y += (dy / dist) * step;
       }
     });
-    this.projectiles = this.projectiles.filter(p => p.alive); // drop dead ones so the array never grows unbounded
+    this.projectiles = pruneDead(this.projectiles, p => p.alive); // drop dead ones so the array never grows unbounded
     this.attackEffects.forEach(effect => { effect.timer -= dt; });
-    this.attackEffects = this.attackEffects.filter(effect => effect.timer > 0);
+    this.attackEffects = pruneDead(this.attackEffects, effect => effect.timer > 0);
   }
 
   updateDamageNumbers(dt){
     this.damageNumbers.forEach(d => { d.timer -= dt; d.y -= dt * 26; });
-    this.damageNumbers = this.damageNumbers.filter(d => d.timer > 0);
+    this.damageNumbers = pruneDead(this.damageNumbers, d => d.timer > 0);
   }
 
   // FLAME TURRET — locks onto up to `channel.maxTargets` enemies in range,
@@ -5167,8 +5197,10 @@ class CombatSystem {
   // range mid-stream), then cools down for `channel.cooldown` before it can
   // lock on again. `instance.flameChannel` is the only state this owns.
   updateFlameInstance(instance, type, dt, aliveEnemies){
-    const resolved = Object.assign({}, type, resolveDefenseStats(type, instance.level));
-    if (instance.tempBuff) resolved.damage = resolved.damage * instance.tempBuff.damageMultiplier;
+    const base = resolveFullDefenseStats(type, instance.level);
+    // Matches original behavior exactly: only damage is boosted here (never
+    // fireRate) — Flame Turret's cadence is paced by `channel`, not fireRate.
+    const resolved = instance.tempBuff ? Object.assign({}, base, { damage: base.damage * instance.tempBuff.damageMultiplier }) : base;
     if (instance.fireFlash > 0) instance.fireFlash = Math.max(0, instance.fireFlash - dt);
     instance.cooldownRemaining = Math.max(0, instance.cooldownRemaining - dt);
     const cfg = type.channel;
@@ -5230,8 +5262,10 @@ class CombatSystem {
   // this owns. Also stays fixed in place — `rotates:false` on its
   // DefenseData entry means it never turns to face a target.
   updateTeslaInstance(instance, type, dt, aliveEnemies){
-    const resolved = Object.assign({}, type, resolveDefenseStats(type, instance.level));
-    if (instance.tempBuff) resolved.damage = resolved.damage * instance.tempBuff.damageMultiplier;
+    const base = resolveFullDefenseStats(type, instance.level);
+    // Matches original behavior exactly: only damage is boosted here (never
+    // fireRate) — same reasoning as Flame Turret above.
+    const resolved = instance.tempBuff ? Object.assign({}, base, { damage: base.damage * instance.tempBuff.damageMultiplier }) : base;
     if (instance.fireFlash > 0) instance.fireFlash = Math.max(0, instance.fireFlash - dt);
     instance.cooldownRemaining = Math.max(0, instance.cooldownRemaining - dt);
 
@@ -5341,7 +5375,7 @@ class CombatSystem {
         });
       }
     });
-    this.cryoZones = this.cryoZones.filter(z => z.remaining > 0);
+    this.cryoZones = pruneDead(this.cryoZones, z => z.remaining > 0);
   }
 
   update(dt){
@@ -5389,6 +5423,38 @@ function resolveDefenseStats(type, level){
   }
   _statResolveCache.set(key, resolved);
   return resolved;
+}
+
+// PERF: updateDefenses()/updateFlameInstance()/updateTeslaInstance() each
+// used to do `Object.assign({}, type, resolveDefenseStats(type, level))`
+// fresh every single frame for every placed defense — cloning the ENTIRE
+// static type object (including its upgradeLevels/upgradeCosts arrays)
+// 60x/sec per defense just to read a few fields. Since a type+level's
+// merged result never changes (resolveDefenseStats itself is already
+// cached), that merge only needs to happen once per type+level, exactly
+// like resolveDefenseStats does. Callers must NOT mutate the object this
+// returns — it's shared/cached; the Temporary Boost tempBuff overlay
+// below makes its own small copy instead of touching this one.
+const _fullStatResolveCache = new Map();
+function resolveFullDefenseStats(type, level){
+  if (!type) return null;
+  const key = type.id + ':' + level;
+  if (_fullStatResolveCache.has(key)) return _fullStatResolveCache.get(key);
+  const merged = Object.assign({}, type, resolveDefenseStats(type, level));
+  _fullStatResolveCache.set(key, merged);
+  return merged;
+}
+
+// Applies an active Temporary Boost on top of a cached (shared, read-only)
+// resolved-stats object without ever mutating that shared object — returns
+// the base object untouched when there's no active buff (the common case,
+// so no allocation happens), or a small one-off copy when there is.
+function applyTempBuff(base, tempBuff){
+  if (!tempBuff) return base;
+  return Object.assign({}, base, {
+    damage: base.damage * tempBuff.damageMultiplier,
+    fireRate: base.fireRate * (tempBuff.fireRateMultiplier || 1),
+  });
 }
 
 class UpgradeManager {
@@ -5615,7 +5681,7 @@ class ObstacleManager {
     // Clean up fully-expired obstacles once their fade completes — never
     // left dangling in the array or (already handled above) in the
     // pathfinder's blocked set.
-    this.obstacles = this.obstacles.filter(o => !(o.state === ObstacleState.EXPIRED && o.removeTimer <= 0));
+    this.obstacles = pruneDead(this.obstacles, o => !(o.state === ObstacleState.EXPIRED && o.removeTimer <= 0));
   }
 }
 
@@ -6283,18 +6349,22 @@ class Renderer {
             ctx.stroke();
           });
         };
-        // Outer pass: wide, saturated, heavily blurred — the glow.
-        ctx.strokeStyle = 'rgba(140,225,255,0.6)';
-        ctx.lineWidth = 7;
-        ctx.shadowColor = '#6fe3ff'; ctx.shadowBlur = 24;
+        // PERF: the glow previously came from ctx.shadowBlur — one of the
+        // most expensive canvas 2D ops on mobile (a real blur convolution
+        // per stroke, per chain hop, up to chainMaxTargets times per burst).
+        // Layered wide-to-narrow translucent strokes give the same glowing-
+        // bolt look with zero blur passes.
+        ctx.strokeStyle = 'rgba(140,225,255,0.32)';
+        ctx.lineWidth = 11;
+        drawBolt();
+        ctx.strokeStyle = 'rgba(160,230,255,0.55)';
+        ctx.lineWidth = 6;
         drawBolt();
         // Inner pass: thin white-hot core on top — the shine.
         ctx.strokeStyle = '#ffffff';
         ctx.lineWidth = 2;
-        ctx.shadowBlur = 12;
         drawBolt();
         // A small bright spark at each hop's landing point.
-        ctx.shadowBlur = 0;
         ctx.fillStyle = '#eafcff';
         (effect.segments || []).forEach(seg => {
           const end = seg[seg.length - 1];
@@ -6371,7 +6441,7 @@ class Renderer {
 
   drawEnemies(ctx, enemyManager){
     enemyManager.enemies.forEach(e => {
-      const enemyType = EnemyData.find(d => d.id === e.typeId);
+      const enemyType = EnemyDataById.get(e.typeId);
       const icon = enemyType ? enemyType.icon : '👺';
       const sprite = enemyType && enemyType.sprite ? this.enemyImages[enemyType.sprite] : null;
       const baseColor = FAMILY_COLOR[e.family] || FAMILY_COLOR.basic;
@@ -7081,7 +7151,7 @@ async function boot(){
   }
   const battleSession = new URLSearchParams(window.location.search).get('battle') === '1';
   if (!battleSession){
-    showBattleMap(requestedStage, requestedStage === 'town-square' ? townSquareHighestUnlockedMap : highestUnlockedMap);
+    showBattleMap('meadow', highestUnlockedMap);
     document.querySelectorAll('.battle-map-stage-tab').forEach(tab => {
       tab.addEventListener('click', () => {
         if (tab.dataset.stage === 'town-square') showBattleMap('town-square', townSquareHighestUnlockedMap);
