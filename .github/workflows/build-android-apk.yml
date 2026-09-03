@@ -1,0 +1,65 @@
+name: Build Debug APK
+
+on:
+  workflow_dispatch:
+  workflow_call: {}
+  push:
+    paths:
+      - 'artifacts/bastion-defense-ui/**'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'pnpm'
+
+      - name: Install pnpm
+        run: npm install -g pnpm
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '11'
+
+      - name: Set up Android SDK
+        uses: r0adkll/setup-android@v2
+        with:
+          api-level: 33
+          build-tools: '33.0.2'
+
+      - name: Install dependencies (bastion-defense-ui)
+        working-directory: artifacts/bastion-defense-ui
+        run: pnpm install --frozen-lockfile
+
+      - name: Build web (bastion-defense-ui)
+        working-directory: artifacts/bastion-defense-ui
+        env:
+          CAPACITOR_BUILD: "true"
+        run: pnpm run build
+
+      - name: Ensure Android platform and sync web assets
+        working-directory: artifacts/bastion-defense-ui
+        run: |
+          npx cap add android || true
+          npx cap sync android
+
+      - name: Build Debug APK with Gradle
+        working-directory: artifacts/bastion-defense-ui/android
+        run: ./gradlew assembleDebug --no-daemon
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-debug-apk
+          path: artifacts/bastion-defense-ui/android/app/build/outputs/apk/debug/app-debug.apk
