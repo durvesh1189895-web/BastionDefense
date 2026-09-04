@@ -5,24 +5,23 @@ import { defineConfig } from 'vite';
 
 import runtimeErrorOverlay from '@replit/vite-plugin-runtime-error-modal';
 
+const isMobileBuild = process.env.CAPACITOR_BUILD === 'true';
+
 const rawPort = process.env.PORT;
+const port = Number(rawPort || '3000');
 
-if (!rawPort) {
-  throw new Error(
-    'PORT environment variable is required but was not provided.',
-  );
-}
-
-const port = Number(rawPort);
-
-if (Number.isNaN(port) || port <= 0) {
-  throw new Error(`Invalid PORT value: "${rawPort}"`);
+if (!isMobileBuild) {
+  if (!rawPort) {
+    throw new Error(
+      'PORT environment variable is required but was not provided.',
+    );
+  }
+  if (Number.isNaN(port) || port <= 0) {
+    throw new Error(`Invalid PORT value: "${rawPort}"`);
+  }
 }
 
 const basePath = process.env.BASE_PATH;
-
-// For mobile builds, don't require BASE_PATH
-const isMobileBuild = process.env.CAPACITOR_BUILD === 'true';
 
 if (!basePath && !isMobileBuild) {
   throw new Error(
